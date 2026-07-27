@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field & Roster — Applicant Tracking</title>
+<style>
+  :root{
+    --pine-950:#12201a;
+    --pine-900:#182a22;
+    --pine-800:#20362c;
+    --pine-700:#2c4536;
+    --pine-600:#3a5a45;
+    --parchment:#e9e2d0;
+    --parchment-dim:#c9c2ac;
+    --amber:#cf9b3c;
+    --amber-soft:#e8c589;
+    --rust:#b5542c;
+    --ok:#7fae6b;
+    --line:#33493c;
+    --font-display:'Roboto Slab', Georgia, serif;
+    --font-body:'Inter', -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--pine-950);color:var(--parchment);font-family:var(--font-body);}
+  ::selection{background:var(--amber);color:var(--pine-950);}
+
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{background:var(--pine-900);border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:28px;}
+  .brand{display:flex;flex-direction:column;gap:2px;padding:0 8px;}
+  .brand .mark{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;color:var(--amber-soft);text-transform:uppercase;}
+  .brand .name{font-family:var(--font-display);font-size:19px;font-weight:700;line-height:1.15;}
+  .brand .sub{font-family:var(--font-mono);font-size:10.5px;color:var(--parchment-dim);}
+
+  nav{display:flex;flex-direction:column;gap:2px;}
+  .navlabel{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--parchment-dim);text-transform:uppercase;padding:8px 12px 4px;}
+  .navbtn{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;border:none;background:transparent;color:var(--parchment-dim);font-family:var(--font-body);font-weight:500;font-size:13.5px;cursor:pointer;text-align:left;transition:background .15s,color .15s;}
+  .navbtn:hover{background:var(--pine-800);color:var(--parchment);}
+  .navbtn.active{background:var(--pine-700);color:var(--amber-soft);}
+  .navbtn .n{font-family:var(--font-mono);font-size:10px;width:18px;color:inherit;opacity:.7;}
+
+  .sidefoot{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--line);font-family:var(--font-mono);font-size:10.5px;color:var(--parchment-dim);line-height:1.6;}
+
+  /* MAIN */
+  main{padding:32px 40px 60px;max-width:1280px;}
+  .pagehead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+  .pagehead h1{font-family:var(--font-display);font-size:28px;margin:0 0 4px;font-weight:700;}
+  .pagehead p{margin:0;color:var(--parchment-dim);font-size:13.5px;}
+  .btn{font-family:var(--font-body);font-weight:600;font-size:13px;padding:9px 16px;border-radius:6px;border:1px solid var(--amber);background:var(--amber);color:var(--pine-950);cursor:pointer;transition:transform .1s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn.ghost{background:transparent;color:var(--amber-soft);}
+  .btn.small{padding:5px 10px;font-size:11.5px;}
+
+  /* METRIC ROW */
+  .metrics{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:28px;}
+  .metric{background:var(--pine-900);border:1px solid var(--line);border-radius:8px;padding:14px 12px;}
+  .metric .num{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--amber-soft);line-height:1;}
+  .metric .lbl{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--parchment-dim);margin-top:6px;}
+
+  /* PANELS */
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
+  .panel{background:var(--pine-900);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:20px;}
+  .panel h2{font-family:var(--font-display);font-size:15.5px;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+  .panel h2 .tag{font-family:var(--font-mono);font-size:9.5px;color:var(--amber);border:1px solid var(--amber);border-radius:4px;padding:1px 6px;letter-spacing:.06em;}
+
+  /* FUNNEL */
+  .funnel-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12.5px;}
+  .funnel-row .stage{width:70px;color:var(--parchment-dim);font-family:var(--font-mono);font-size:11px;}
+  .funnel-row .bar-track{flex:1;height:8px;background:var(--pine-800);border-radius:4px;overflow:hidden;}
+  .funnel-row .bar-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--amber-soft));border-radius:4px;}
+  .funnel-row .pct{width:38px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--amber-soft);}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--parchment-dim);padding:8px 10px;border-bottom:1px solid var(--line);}
+  td{padding:9px 10px;border-bottom:1px solid var(--pine-800);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--pine-800);}
+  .id-mono{font-family:var(--font-mono);font-size:11.5px;color:var(--amber-soft);}
+  .muted{color:var(--parchment-dim);}
+
+  .pill{display:inline-block;font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:100px;letter-spacing:.02em;white-space:nowrap;}
+  .pill.applied,.pill.shortlisted{background:#2c4055;color:#9fc4e8;}
+  .pill.initial{background:#453a20;color:var(--amber-soft);}
+  .pill.final{background:#4a3320;color:#e8a35f;}
+  .pill.offer{background:#3d2c50;color:#c9a3e8;}
+  .pill.hired{background:#28402f;color:var(--ok);}
+  .pill.onhold{background:#40342c;color:#d3a978;}
+  .pill.pooling{background:#33493c;color:var(--parchment-dim);}
+  .pill.withdrawn{background:#472a2a;color:#d47f7f;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  input,select,textarea{font-family:var(--font-body);background:var(--pine-800);border:1px solid var(--line);color:var(--parchment);border-radius:6px;padding:8px 10px;font-size:13px;}
+  input:focus,select:focus,textarea:focus{outline:1.5px solid var(--amber);}
+  .search{flex:1;min-width:180px;}
+
+  .actions{display:flex;gap:6px;}
+  .iconbtn{background:transparent;border:1px solid var(--line);color:var(--parchment-dim);border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:var(--font-mono);}
+  .iconbtn:hover{border-color:var(--amber);color:var(--amber-soft);}
+
+  .empty{padding:40px 20px;text-align:center;color:var(--parchment-dim);font-size:13px;}
+  .empty .big{font-family:var(--font-display);font-size:16px;color:var(--parchment);margin-bottom:4px;}
+
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(10,16,13,.7);display:none;align-items:flex-start;justify-content:center;padding:6vh 20px;z-index:50;overflow:auto;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--pine-900);border:1px solid var(--line);border-radius:12px;padding:26px 28px;width:100%;max-width:560px;}
+  .modal h3{font-family:var(--font-display);margin:0 0 18px;font-size:18px;}
+  .field{margin-bottom:12px;display:flex;flex-direction:column;gap:5px;}
+  .field label{font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--parchment-dim);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+
+  .vac-card{border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+  .vac-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .vac-card h4{margin:0 0 4px;font-family:var(--font-display);font-size:14.5px;}
+  .vac-card .meta{font-family:var(--font-mono);font-size:10.5px;color:var(--parchment-dim);}
+  .vac-progress{display:flex;gap:3px;margin-top:10px;}
+  .vac-slot{flex:1;height:6px;border-radius:3px;background:var(--pine-800);}
+  .vac-slot.filled{background:var(--ok);}
+
+  .badge-status{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:100px;}
+  .badge-status.open{background:#453a20;color:var(--amber-soft);}
+  .badge-status.filled{background:#28402f;color:var(--ok);}
+
+  select.pill-select{-webkit-appearance:none;appearance:none;border:none;padding:3px 22px 3px 9px;font-family:var(--font-mono);font-size:10px;border-radius:100px;background-repeat:no-repeat;background-position:right 7px center;background-size:8px;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .metrics{grid-template-columns:repeat(2,1fr);}
+    .grid2{grid-template-columns:1fr;}
+    main{padding:20px;}
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">NBC · Recruitment</div>
+      <div class="name">Field &amp; Roster</div>
+      <div class="sub">applicant tracking</div>
+    </div>
+    <nav>
+      <div class="navlabel">Overview</div>
+      <button class="navbtn active" data-view="dashboard"><span class="n">01</span> Dashboard</button>
+      <div class="navlabel">Pipeline</div>
+      <button class="navbtn" data-view="applicants"><span class="n">02</span> Applicants</button>
+      <button class="navbtn" data-view="interviews"><span class="n">03</span> Interview Schedule</button>
+      <div class="navlabel">Manpower</div>
+      <button class="navbtn" data-view="vacancies"><span class="n">04</span> Vacancies &amp; MRF</button>
+      <div class="navlabel">Configure</div>
+      <button class="navbtn" data-view="settings"><span class="n">05</span> Settings</button>
+    </nav>
+    <div class="sidefoot">Data shared across this workspace.<br>Prototype build — v0.1</div>
+  </aside>
+
+  <main>
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="pagehead">
+        <div>
+          <h1>Recruitment Dashboard</h1>
+          <p id="dash-date">—</p>
+        </div>
+        <button class="btn" onclick="openApplicantModal()">+ New Applicant</button>
+      </div>
+
+      <div class="metrics" id="metrics-row"></div>
+
+      <div class="grid2">
+        <div class="panel">
+          <h2>Recruitment Funnel <span class="tag">live</span></h2>
+          <div id="funnel"></div>
+        </div>
+        <div class="panel">
+          <h2>Upcoming Interviews</h2>
+          <div id="upcoming-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent Applicants</h2>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Position</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody id="recent-applicants"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- APPLICANTS -->
+    <section class="view" id="view-applicants">
+      <div class="pagehead">
+        <div>
+          <h1>Applicants</h1>
+          <p>Full pipeline roster</p>
+        </div>
+        <button class="btn" onclick="openApplicantModal()">+ New Applicant</button>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="app-search" placeholder="Search name, position, or ID…" oninput="renderApplicants()">
+        <select id="app-filter-status" onchange="renderApplicants()"><option value="">All statuses</option></select>
+        <select id="app-filter-position" onchange="renderApplicants()"><option value="">All positions</option></select>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Date Applied</th><th>Name</th><th>Position</th><th>Source</th><th>Recruiter</th><th>Status</th><th>Remarks</th><th></th>
+          </tr></thead>
+          <tbody id="applicants-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- INTERVIEWS -->
+    <section class="view" id="view-interviews">
+      <div class="pagehead">
+        <div>
+          <h1>Interview Schedule</h1>
+          <p>Upcoming and past interviews</p>
+        </div>
+        <button class="btn" onclick="openInterviewModal()">+ Schedule Interview</button>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr>
+            <th>Candidate</th><th>Position</th><th>Interviewer</th><th>Date</th><th>Time</th><th>Contact</th><th>Email</th><th>Remarks</th><th></th>
+          </tr></thead>
+          <tbody id="interviews-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VACANCIES -->
+    <section class="view" id="view-vacancies">
+      <div class="pagehead">
+        <div>
+          <h1>Vacancies &amp; MRF Tracking</h1>
+          <p>Manpower requisition status</p>
+        </div>
+        <button class="btn" onclick="openVacancyModal()">+ New Vacancy</button>
+      </div>
+      <div id="vacancies-list"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings">
+      <div class="pagehead">
+        <div>
+          <h1>Settings</h1>
+          <p>Lookup lists used across the app</p>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h2>Status Options</h2>
+          <div id="list-status"></div>
+          <div class="toolbar" style="margin-top:12px;"><input id="new-status" placeholder="Add status…" style="flex:1;"><button class="btn small" onclick="addSetting('status')">Add</button></div>
+        </div>
+        <div class="panel">
+          <h2>Position Options</h2>
+          <div id="list-position"></div>
+          <div class="toolbar" style="margin-top:12px;"><input id="new-position" placeholder="Add position…" style="flex:1;"><button class="btn small" onclick="addSetting('position')">Add</button></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Source Options</h2>
+        <div id="list-source"></div>
+        <div class="toolbar" style="margin-top:12px;"><input id="new-source" placeholder="Add source…" style="max-width:240px;"><button class="btn small" onclick="addSetting('source')">Add</button></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- APPLICANT MODAL -->
+<div class="overlay" id="modal-applicant">
+  <div class="modal">
+    <h3 id="applicant-modal-title">New Applicant</h3>
+    <input type="hidden" id="app-edit-id">
+    <div class="field-row">
+      <div class="field"><label>Name</label><input id="f-app-name"></div>
+      <div class="field"><label>Date Applied</label><input type="date" id="f-app-date"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Position</label><select id="f-app-position"></select></div>
+      <div class="field"><label>Source</label><select id="f-app-source"></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Phone</label><input id="f-app-phone"></div>
+      <div class="field"><label>Email</label><input id="f-app-email"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Recruiter</label><input id="f-app-recruiter"></div>
+      <div class="field"><label>Status</label><select id="f-app-status"></select></div>
+    </div>
+    <div class="field"><label>Remarks</label><textarea id="f-app-remarks" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-applicant')">Cancel</button>
+      <button class="btn" onclick="saveApplicant()">Save Applicant</button>
+    </div>
+  </div>
+</div>
+
+<!-- INTERVIEW MODAL -->
+<div class="overlay" id="modal-interview">
+  <div class="modal">
+    <h3>Schedule Interview</h3>
+    <input type="hidden" id="int-edit-id">
+    <div class="field-row">
+      <div class="field"><label>Candidate Name</label><input id="f-int-name"></div>
+      <div class="field"><label>Position</label><select id="f-int-position"></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Interviewer</label><input id="f-int-interviewer"></div>
+      <div class="field"><label>Contact Number</label><input id="f-int-contact"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date</label><input type="date" id="f-int-date"></div>
+      <div class="field"><label>Time</label><input type="time" id="f-int-time"></div>
+    </div>
+    <div class="field"><label>Email Address</label><input id="f-int-email"></div>
+    <div class="field"><label>Remarks</label><textarea id="f-int-remarks" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-interview')">Cancel</button>
+      <button class="btn" onclick="saveInterview()">Save Interview</button>
+    </div>
+  </div>
+</div>
+
+<!-- VACANCY MODAL -->
+<div class="overlay" id="modal-vacancy">
+  <div class="modal">
+    <h3>New Vacancy</h3>
+    <input type="hidden" id="vac-edit-id">
+    <div class="field"><label>Vacant Position</label><input id="f-vac-position"></div>
+    <div class="field-row">
+      <div class="field"><label>No. of Vacancy</label><input type="number" id="f-vac-count" min="1" value="1"></div>
+      <div class="field"><label>No. Deployed</label><input type="number" id="f-vac-deployed" min="0" value="0"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>MRF No.</label><input id="f-vac-mrf"></div>
+      <div class="field"><label>Date Needed</label><input type="date" id="f-vac-dateneeded"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Requested By</label><input id="f-vac-requestedby"></div>
+      <div class="field"><label>Department</label><input id="f-vac-department"></div>
+    </div>
+    <div class="field"><label>MRF Status</label><input id="f-vac-mrfstatus" placeholder="e.g. With Approved MRF"></div>
+    <div class="field"><label>Remarks / Status</label><textarea id="f-vac-status" rows="2" placeholder="e.g. Filled — Santos, Ariel. Deployed Feb 18, 2026"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-vacancy')">Cancel</button>
+      <button class="btn" onclick="saveVacancy()">Save Vacancy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- SUPABASE CONFIG ----------
+// Fill these in from Project Settings → API in your Supabase dashboard.
+const SUPABASE_URL = 'sb_publishable_Z_svHVFuWhlIROkemo7glw_6IY-bxol';
+const SUPABASE_ANON_KEY = 'sb_publishable_Z_svHVFuWhlIROkemo7glw_6IY-bxol';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let DB = {
+  applicants: [],
+  interviews: [],
+  vacancies: [],
+  settings: { status: [], position: [], source: [] }
+};
+
+const STATUS_CLASS = {
+  'Shortlisted':'shortlisted','Initial Interview':'initial','Final Interview':'final',
+  'Job Offer':'offer','Hired':'hired','On-Hold':'onhold','Pooling':'pooling','Withdrawn':'withdrawn','Applied':'applied'
+};
+
+async function loadDB(){
+  const [appsRes, intsRes, vacsRes, setsRes] = await Promise.all([
+    sb.from('applicants').select('*').order('created_at',{ascending:false}),
+    sb.from('interviews').select('*'),
+    sb.from('vacancies').select('*').order('created_at',{ascending:false}),
+    sb.from('settings').select('*')
+  ]);
+  if(appsRes.error) console.error(appsRes.error);
+  if(intsRes.error) console.error(intsRes.error);
+  if(vacsRes.error) console.error(vacsRes.error);
+  if(setsRes.error) console.error(setsRes.error);
+
+  DB.applicants = (appsRes.data||[]).map(a=>({
+    id:a.id, dateApplied:a.date_applied, name:a.name, position:a.position, source:a.source,
+    phone:a.phone, email:a.email, recruiter:a.recruiter, status:a.status, remarks:a.remarks
+  }));
+  DB.interviews = (intsRes.data||[]).map(i=>({
+    id:i.id, candidate:i.candidate, position:i.position, interviewer:i.interviewer,
+    contact:i.contact, date:i.date, time:i.time, email:i.email, remarks:i.remarks
+  }));
+  DB.vacancies = (vacsRes.data||[]).map(v=>({
+    id:v.id, position:v.position, count:v.count, deployed:v.deployed, mrf:v.mrf,
+    dateNeeded:v.date_needed, requestedBy:v.requested_by, department:v.department,
+    mrfStatus:v.mrf_status, status:v.status
+  }));
+  DB.settings = { status:[], position:[], source:[] };
+  (setsRes.data||[]).forEach(s=>{ if(DB.settings[s.category]) DB.settings[s.category].push(s.value); });
+}
+function nextId(){
+  return 'APP-' + String(DB.applicants.length + 1).padStart(4,'0');
+}
+
+// ---------- NAV ----------
+document.querySelectorAll('.navbtn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('view-'+b.dataset.view).classList.add('active');
+    renderAll();
+  });
+});
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// ---------- SETTINGS-DEPENDENT SELECTS ----------
+function fillSelect(sel, options, selected){
+  sel.innerHTML = options.map(o=>`<option value="${escapeHtml(o)}" ${o===selected?'selected':''}>${escapeHtml(o)}</option>`).join('');
+}
+function escapeHtml(s){ return (s??'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// ---------- APPLICANTS ----------
+function openApplicantModal(id){
+  fillSelect(document.getElementById('f-app-position'), DB.settings.position);
+  fillSelect(document.getElementById('f-app-source'), DB.settings.source);
+  fillSelect(document.getElementById('f-app-status'), DB.settings.status);
+  if(id){
+    const a = DB.applicants.find(x=>x.id===id);
+    document.getElementById('applicant-modal-title').textContent = 'Edit Applicant';
+    document.getElementById('app-edit-id').value = id;
+    document.getElementById('f-app-name').value = a.name;
+    document.getElementById('f-app-date').value = a.dateApplied;
+    document.getElementById('f-app-position').value = a.position;
+    document.getElementById('f-app-source').value = a.source;
+    document.getElementById('f-app-phone').value = a.phone;
+    document.getElementById('f-app-email').value = a.email;
+    document.getElementById('f-app-recruiter').value = a.recruiter;
+    document.getElementById('f-app-status').value = a.status;
+    document.getElementById('f-app-remarks').value = a.remarks;
+  } else {
+    document.getElementById('applicant-modal-title').textContent = 'New Applicant';
+    ['app-edit-id','f-app-name','f-app-phone','f-app-email','f-app-recruiter','f-app-remarks'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f-app-date').value = new Date().toISOString().slice(0,10);
+  }
+  document.getElementById('modal-applicant').classList.add('open');
+}
+async function saveApplicant(){
+  const editId = document.getElementById('app-edit-id').value;
+  const name = document.getElementById('f-app-name').value.trim();
+  if(!name){ alert('Name is required.'); return; }
+  const rec = {
+    id: editId || nextId(),
+    dateApplied: document.getElementById('f-app-date').value,
+    name,
+    position: document.getElementById('f-app-position').value,
+    source: document.getElementById('f-app-source').value,
+    phone: document.getElementById('f-app-phone').value.trim(),
+    email: document.getElementById('f-app-email').value.trim(),
+    recruiter: document.getElementById('f-app-recruiter').value.trim(),
+    status: document.getElementById('f-app-status').value,
+    remarks: document.getElementById('f-app-remarks').value.trim()
+  };
+  const { error } = await sb.from('applicants').upsert({
+    id: rec.id, date_applied: rec.dateApplied, name: rec.name, position: rec.position,
+    source: rec.source, phone: rec.phone, email: rec.email, recruiter: rec.recruiter,
+    status: rec.status, remarks: rec.remarks
+  });
+  if(error){ alert('Save failed: '+error.message); return; }
+  closeModal('modal-applicant');
+  await loadDB();
+  renderAll();
+}
+async function deleteApplicant(id){
+  if(!confirm('Remove this applicant record?')) return;
+  const { error } = await sb.from('applicants').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  await loadDB();
+  renderAll();
+}
+
+function renderApplicants(){
+  const search = (document.getElementById('app-search')?.value||'').toLowerCase();
+  const fStatus = document.getElementById('app-filter-status')?.value||'';
+  const fPos = document.getElementById('app-filter-position')?.value||'';
+
+  const statusSel = document.getElementById('app-filter-status');
+  const posSel = document.getElementById('app-filter-position');
+  if(statusSel && statusSel.options.length<=1){
+    DB.settings.status.forEach(s=>statusSel.appendChild(new Option(s,s)));
+  }
+  if(posSel && posSel.options.length<=1){
+    DB.settings.position.forEach(p=>posSel.appendChild(new Option(p,p)));
+  }
+
+  const rows = DB.applicants.filter(a=>{
+    const matchesSearch = !search || a.name.toLowerCase().includes(search) || a.position.toLowerCase().includes(search) || a.id.toLowerCase().includes(search);
+    const matchesStatus = !fStatus || a.status===fStatus;
+    const matchesPos = !fPos || a.position===fPos;
+    return matchesSearch && matchesStatus && matchesPos;
+  });
+
+  const tbody = document.getElementById('applicants-table');
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="big">No applicants yet</div>Add your first applicant to start the pipeline.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(a=>`
+    <tr>
+      <td class="id-mono">${a.id}</td>
+      <td class="muted">${a.dateApplied||'—'}</td>
+      <td>${escapeHtml(a.name)}</td>
+      <td>${escapeHtml(a.position)}</td>
+      <td class="muted">${escapeHtml(a.source)}</td>
+      <td class="muted">${escapeHtml(a.recruiter)||'—'}</td>
+      <td><span class="pill ${STATUS_CLASS[a.status]||''}">${escapeHtml(a.status)}</span></td>
+      <td class="muted">${escapeHtml(a.remarks)||'—'}</td>
+      <td><div class="actions">
+        <button class="iconbtn" onclick="openApplicantModal('${a.id}')">edit</button>
+        <button class="iconbtn" onclick="deleteApplicant('${a.id}')">del</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+// ---------- INTERVIEWS ----------
+function openInterviewModal(id){
+  fillSelect(document.getElementById('f-int-position'), DB.settings.position);
+  if(id){
+    const i = DB.interviews.find(x=>x.id===id);
+    document.getElementById('int-edit-id').value = id;
+    document.getElementById('f-int-name').value = i.candidate;
+    document.getElementById('f-int-position').value = i.position;
+    document.getElementById('f-int-interviewer').value = i.interviewer;
+    document.getElementById('f-int-contact').value = i.contact;
+    document.getElementById('f-int-date').value = i.date;
+    document.getElementById('f-int-time').value = i.time;
+    document.getElementById('f-int-email').value = i.email;
+    document.getElementById('f-int-remarks').value = i.remarks;
+  } else {
+    ['int-edit-id','f-int-name','f-int-interviewer','f-int-contact','f-int-email','f-int-remarks'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f-int-date').value = new Date().toISOString().slice(0,10);
+  }
+  document.getElementById('modal-interview').classList.add('open');
+}
+async function saveInterview(){
+  const editId = document.getElementById('int-edit-id').value;
+  const candidate = document.getElementById('f-int-name').value.trim();
+  if(!candidate){ alert('Candidate name is required.'); return; }
+  const rec = {
+    id: editId || 'INT-'+Date.now(),
+    candidate,
+    position: document.getElementById('f-int-position').value,
+    interviewer: document.getElementById('f-int-interviewer').value.trim(),
+    contact: document.getElementById('f-int-contact').value.trim(),
+    date: document.getElementById('f-int-date').value,
+    time: document.getElementById('f-int-time').value,
+    email: document.getElementById('f-int-email').value.trim(),
+    remarks: document.getElementById('f-int-remarks').value.trim()
+  };
+  const { error } = await sb.from('interviews').upsert({
+    id: rec.id, candidate: rec.candidate, position: rec.position, interviewer: rec.interviewer,
+    contact: rec.contact, date: rec.date, time: rec.time || null, email: rec.email, remarks: rec.remarks
+  });
+  if(error){ alert('Save failed: '+error.message); return; }
+  closeModal('modal-interview');
+  await loadDB();
+  renderAll();
+}
+async function deleteInterview(id){
+  if(!confirm('Remove this interview?')) return;
+  const { error } = await sb.from('interviews').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  await loadDB();
+  renderAll();
+}
+function renderInterviews(){
+  const tbody = document.getElementById('interviews-table');
+  const rows = [...DB.interviews].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="big">Nothing scheduled</div>Schedule an interview to see it here.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(i=>`
+    <tr>
+      <td>${escapeHtml(i.candidate)}</td>
+      <td class="muted">${escapeHtml(i.position)}</td>
+      <td class="muted">${escapeHtml(i.interviewer)||'—'}</td>
+      <td>${i.date||'—'}</td>
+      <td class="id-mono">${i.time||'—'}</td>
+      <td class="muted">${escapeHtml(i.contact)||'—'}</td>
+      <td class="muted">${escapeHtml(i.email)||'—'}</td>
+      <td class="muted">${escapeHtml(i.remarks)||'—'}</td>
+      <td><div class="actions">
+        <button class="iconbtn" onclick="openInterviewModal('${i.id}')">edit</button>
+        <button class="iconbtn" onclick="deleteInterview('${i.id}')">del</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+// ---------- VACANCIES ----------
+function openVacancyModal(id){
+  if(id){
+    const v = DB.vacancies.find(x=>x.id===id);
+    document.getElementById('vac-edit-id').value = id;
+    document.getElementById('f-vac-position').value = v.position;
+    document.getElementById('f-vac-count').value = v.count;
+    document.getElementById('f-vac-deployed').value = v.deployed;
+    document.getElementById('f-vac-mrf').value = v.mrf;
+    document.getElementById('f-vac-dateneeded').value = v.dateNeeded;
+    document.getElementById('f-vac-requestedby').value = v.requestedBy;
+    document.getElementById('f-vac-department').value = v.department;
+    document.getElementById('f-vac-mrfstatus').value = v.mrfStatus;
+    document.getElementById('f-vac-status').value = v.status;
+  } else {
+    ['vac-edit-id','f-vac-position','f-vac-mrf','f-vac-dateneeded','f-vac-requestedby','f-vac-department','f-vac-mrfstatus','f-vac-status'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f-vac-count').value = 1;
+    document.getElementById('f-vac-deployed').value = 0;
+  }
+  document.getElementById('modal-vacancy').classList.add('open');
+}
+async function saveVacancy(){
+  const editId = document.getElementById('vac-edit-id').value;
+  const position = document.getElementById('f-vac-position').value.trim();
+  if(!position){ alert('Vacant position is required.'); return; }
+  const rec = {
+    id: editId || 'VAC-'+Date.now(),
+    position,
+    count: parseInt(document.getElementById('f-vac-count').value)||0,
+    deployed: parseInt(document.getElementById('f-vac-deployed').value)||0,
+    mrf: document.getElementById('f-vac-mrf').value.trim(),
+    dateNeeded: document.getElementById('f-vac-dateneeded').value,
+    requestedBy: document.getElementById('f-vac-requestedby').value.trim(),
+    department: document.getElementById('f-vac-department').value.trim(),
+    mrfStatus: document.getElementById('f-vac-mrfstatus').value.trim(),
+    status: document.getElementById('f-vac-status').value.trim()
+  };
+  const { error } = await sb.from('vacancies').upsert({
+    id: rec.id, position: rec.position, count: rec.count, deployed: rec.deployed, mrf: rec.mrf,
+    date_needed: rec.dateNeeded || null, requested_by: rec.requestedBy, department: rec.department,
+    mrf_status: rec.mrfStatus, status: rec.status
+  });
+  if(error){ alert('Save failed: '+error.message); return; }
+  closeModal('modal-vacancy');
+  await loadDB();
+  renderAll();
+}
+async function deleteVacancy(id){
+  if(!confirm('Remove this vacancy?')) return;
+  const { error } = await sb.from('vacancies').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  await loadDB();
+  renderAll();
+}
+function renderVacancies(){
+  const wrap = document.getElementById('vacancies-list');
+  if(DB.vacancies.length===0){
+    wrap.innerHTML = `<div class="panel"><div class="empty"><div class="big">No open vacancies</div>Add a manpower requisition to start tracking it.</div></div>`;
+    return;
+  }
+  wrap.innerHTML = DB.vacancies.map(v=>{
+    const remaining = Math.max(v.count - v.deployed, 0);
+    const filled = remaining===0;
+    const slots = Array.from({length:v.count}).map((_,i)=>`<div class="vac-slot ${i<v.deployed?'filled':''}"></div>`).join('');
+    return `
+    <div class="vac-card">
+      <div class="top">
+        <div>
+          <h4>${escapeHtml(v.position)}</h4>
+          <div class="meta">${escapeHtml(v.mrf)||'no MRF no.'} · ${escapeHtml(v.department)||'—'} · needed ${v.dateNeeded||'—'} · req. by ${escapeHtml(v.requestedBy)||'—'}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="badge-status ${filled?'filled':'open'}">${filled?'Filled':remaining+' open'}</span>
+          <div class="actions">
+            <button class="iconbtn" onclick="openVacancyModal('${v.id}')">edit</button>
+            <button class="iconbtn" onclick="deleteVacancy('${v.id}')">del</button>
+          </div>
+        </div>
+      </div>
+      <div class="vac-progress">${slots}</div>
+      <div class="meta" style="margin-top:8px;">${escapeHtml(v.mrfStatus)||''}${v.status?' — '+escapeHtml(v.status):''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- SETTINGS ----------
+function renderSettingsList(key, containerId){
+  const el = document.getElementById(containerId);
+  el.innerHTML = DB.settings[key].map((v,i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--pine-800);font-size:13px;">
+      <span>${escapeHtml(v)}</span>
+      <button class="iconbtn" onclick="removeSetting('${key}',${i})">remove</button>
+    </div>`).join('') || `<div class="empty">No entries yet.</div>`;
+}
+async function addSetting(key){
+  const input = document.getElementById('new-'+key);
+  const val = input.value.trim();
+  if(!val) return;
+  const { error } = await sb.from('settings').insert({ category:key, value:val });
+  if(error){ alert('Add failed: '+error.message); return; }
+  input.value='';
+  await loadDB();
+  renderAll();
+}
+async function removeSetting(key, idx){
+  const val = DB.settings[key][idx];
+  const { error } = await sb.from('settings').delete().eq('category',key).eq('value',val);
+  if(error){ alert('Remove failed: '+error.message); return; }
+  await loadDB();
+  renderAll();
+}
+
+// ---------- DASHBOARD ----------
+function renderDashboard(){
+  document.getElementById('dash-date').textContent = new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+
+  const total = DB.applicants.length;
+  const count = s => DB.applicants.filter(a=>a.status===s).length;
+  const vacantTotal = DB.vacancies.reduce((sum,v)=>sum+Math.max(v.count-v.deployed,0),0);
+
+  const metrics = [
+    {num: total, lbl:'Total Applicants'},
+    {num: count('Initial Interview'), lbl:'Initial Stage'},
+    {num: count('Final Interview'), lbl:'Final Stage'},
+    {num: count('Job Offer'), lbl:'Offer Stage'},
+    {num: count('Hired'), lbl:'Hired'},
+    {num: count('On-Hold'), lbl:'On Hold'},
+    {num: vacantTotal, lbl:'Vacant Positions'}
+  ];
+  document.getElementById('metrics-row').innerHTML = metrics.map(m=>`
+    <div class="metric"><div class="num">${m.num}</div><div class="lbl">${m.lbl}</div></div>`).join('');
+
+  const stages = ['Applied','Shortlisted','Initial Interview','Final Interview','Job Offer','Hired'];
+  const applied = total || 1;
+  document.getElementById('funnel').innerHTML = stages.map(s=>{
+    const c = count(s);
+    const pct = Math.round((c/applied)*100);
+    return `<div class="funnel-row">
+      <span class="stage">${s}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${pct}%"></span></span>
+      <span class="pct">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = DB.interviews.filter(i=>i.date>=today).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
+  document.getElementById('upcoming-list').innerHTML = upcoming.length ? upcoming.map(i=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--pine-800);font-size:12.5px;">
+      <div><strong>${escapeHtml(i.candidate)}</strong><div class="muted" style="font-size:11px;">${escapeHtml(i.position)}</div></div>
+      <div style="text-align:right;" class="id-mono">${i.date}<br>${i.time||''}</div>
+    </div>`).join('') : `<div class="empty">No interviews scheduled.</div>`;
+
+  const recent = [...DB.applicants].slice(0,6);
+  document.getElementById('recent-applicants').innerHTML = recent.length ? recent.map(a=>`
+    <tr><td class="id-mono">${a.id}</td><td>${escapeHtml(a.name)}</td><td class="muted">${escapeHtml(a.position)}</td><td class="muted">${a.dateApplied||'—'}</td>
+    <td><span class="pill ${STATUS_CLASS[a.status]||''}">${escapeHtml(a.status)}</span></td></tr>`).join('')
+    : `<tr><td colspan="5"><div class="empty">No applicants yet.</div></td></tr>`;
+}
+
+function renderAll(){
+  renderDashboard();
+  renderApplicants();
+  renderInterviews();
+  renderVacancies();
+  renderSettingsList('status','list-status');
+  renderSettingsList('position','list-position');
+  renderSettingsList('source','list-source');
+}
+
+(async function init(){
+  await loadDB();
+  renderAll();
+})();
+</script>
+</body>
+</html>
