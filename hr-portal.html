@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Service Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; background: #f4f6f8; }
+    .container { max-width: 550px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    img.logo { display: block; margin: 0 auto 20px auto; width: 150px; }
+    h2 { text-align: center; margin-bottom: 5px; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 20px; font-size: 14px; }
+    input, textarea, select { width: 100%; margin-bottom: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+    textarea { min-height: 120px; resize: vertical; }
+    button { width: 100%; padding: 12px; background: #1976d2; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #1259a7; }
+    button:disabled { background: #999; cursor: not-allowed; }
+    .loading { display: none; text-align: center; margin-top: 10px; color: #555; }
+    .success-msg { display: none; text-align: center; color: green; margin-top: 15px; font-weight: bold; }
+    .upload-label { margin-bottom: 5px; display: block; font-size: 14px; font-weight: bold; }
+
+    .status-card { display: none; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-top: 15px; background-color: #f8fafc; }
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; background-color: #e2e8f0; color: #475569; }
+    .status-badge[data-status="pending"] { background-color: #fff7ed; color: #ea580c; }
+    .status-badge[data-status="for nte issuance"] { background-color: #e0f2fe; color: #0369a1; }
+    .status-badge[data-status="under review"] { background-color: #e0f2fe; color: #0369a1; }
+    .status-badge[data-status="processing"] { background-color: #e0f2fe; color: #0369a1; }
+    .status-badge[data-status="nte served"] { background-color: #dcfce7; color: #16a34a; }
+    .status-badge[data-status="invalid document"] { background-color: #fee2e2; color: #b91c1c; }
+    .status-badge[data-status="invalid claim"] { background-color: #fee2e2; color: #b91c1c; }
+    .status-badge[data-status="invalid request"] { background-color: #fee2e2; color: #b91c1c; }
+    .status-badge[data-status="resolved"] { background-color: #dcfce7; color: #16a34a; }
+    .status-badge[data-status="case closed"] { background-color: #dcfce7; color: #16a34a; }
+    .status-badge[data-status="completed – sent to email"] { background-color: #dcfce7; color: #16a34a; }
+
+    .action-row { margin-top: 12px; text-align: right; }
+    .btn-secondary { background: #475569; font-size: 13px; padding: 8px 14px; width: auto; display: inline-block; }
+    .btn-secondary:hover { background: #334155; }
+    .feedback-drawer { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #cbd5e1; }
+    .feedback-drawer textarea { min-height: 70px; font-size: 13px; margin-bottom: 8px; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s ease-in-out; }
+    .modal-card { background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); max-width: 400px; width: 90%; text-align: center; transform: scale(0.9); transition: transform 0.2s ease-in-out; }
+    .modal-overlay.show { display: flex; opacity: 1; }
+    .modal-overlay.show .modal-card { transform: scale(1); }
+    .modal-icon { width: 56px; height: 56px; font-size: 28px; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; }
+    .modal-card h3 { color: #1e293b; margin: 0 0 10px 0; font-size: 22px; font-weight: 600; }
+    .modal-card p { color: #64748b; font-size: 15px; line-height: 1.5; margin: 0 0 24px 0; }
+    .modal-btn { background: #1976d2; color: #ffffff; border: none; padding: 12px 32px; font-size: 15px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: background 0.15s ease; width: 100%; }
+    .modal-btn:hover { background: #1259a7; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <img src="https://drive.google.com/thumbnail?id=1gSPJpCbu96TiTrXhJskgJzm2gzQHQYcl&sz=w300" class="logo" alt="North Breeders Logo">
+  <h2>HR Service Portal</h2>
+  <div class="subtitle">Submit requests, report concerns, and access HR services conveniently.</div>
+
+  <select id="concernType" onchange="toggleForms()">
+    <option value="">Select Transaction Type</option>
+    <option value="incident">Incident Report</option>
+    <option value="payroll">Payroll Concern</option>
+    <option value="coe">Request for COE</option>
+    <option value="track">Track Ticket Status</option>
+  </select>
+
+  <div id="incidentForm" style="display:none;">
+    <input id="reportedBy" placeholder="Reported By">
+    <input id="email" type="email" placeholder="Your Email">
+    <input id="department" placeholder="Department">
+    <input id="employee" placeholder="Employee Involved">
+    <textarea id="description" placeholder="Describe the incident"></textarea>
+    <label class="upload-label">Upload Evidences / Supporting Documents (Select Multiple)</label>
+    <input type="file" id="incidentFile" accept=".pdf,image/*" multiple>
+  </div>
+
+  <div id="payrollForm" style="display:none;">
+    <input id="payrollReportedBy" placeholder="Reported By">
+    <input id="payrollDepartment" placeholder="Department">
+    <input id="payrollEmail" type="email" placeholder="Email Address">
+    <select id="payrollConcernType" onchange="togglePayrollDescription()">
+      <option value="">Select Payroll Concern</option>
+      <option value="Incorrect Salary">Incorrect Salary</option>
+      <option value="Missing Salary">Missing Salary</option>
+      <option value="Missing Overtime Pay">Missing Overtime Pay</option>
+      <option value="Wrong Deduction">Wrong Deduction</option>
+      <option value="Leave Pay Concern">Leave Pay Concern</option>
+      <option value="Others">Others</option>
+    </select>
+    <textarea id="payrollDescription" placeholder="Describe your payroll concern" style="display:none;"></textarea>
+    <label class="upload-label">Upload Payslip / Screenshot</label>
+    <input type="file" id="payrollFile" accept=".pdf,image/*">
+  </div>
+
+  <div id="coeForm" style="display:none;">
+    <input id="coeName" placeholder="Employee Name">
+    <input id="coeDepartment" placeholder="Department">
+    <input id="coeEmail" type="email" placeholder="Email Address">
+    <select id="coePurpose" onchange="toggleCOEPurpose()">
+      <option value="">Select Purpose</option>
+      <option value="Bank Requirement">Bank Requirement</option>
+      <option value="Travel">Travel</option>
+      <option value="Visa Application">Visa Application</option>
+      <option value="Others">Others</option>
+    </select>
+    <textarea id="coeOtherPurpose" placeholder="Specify purpose" style="display:none;"></textarea>
+  </div>
+
+  <div id="trackForm" style="display:none;">
+    <input id="trackTicketId" placeholder="Enter Reference ID (e.g. COE-2026-0001)">
+
+    <div class="status-card" id="statusCard">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <strong id="cardType" style="color: #1e293b;"></strong>
+        <span id="cardBadge" class="status-badge" data-status=""></span>
+      </div>
+      <div style="font-size: 13px; color: #475569; line-height: 1.5;">
+        <div><strong>ID:</strong> <span id="cardId"></span></div>
+        <div><strong>Date Logged:</strong> <span id="cardDate"></span></div>
+        <div><strong>Submitted By:</strong> <span id="cardReporter"></span></div>
+        <div style="margin-top: 5px; border-top: 1px dashed #cbd5e1; padding-top: 5px;">
+          <strong>Details:</strong> <span id="cardDetails"></span>
+        </div>
+      </div>
+
+      <div class="action-row" id="initActionBlock">
+        <button type="button" class="btn-secondary" onclick="openFeedbackDrawer()">✉ Follow-up / Send Feedback</button>
+      </div>
+
+      <div class="feedback-drawer" id="feedbackDrawer">
+        <textarea id="feedbackText" placeholder="Type your follow-up inquiry or feedback message for HR here..."></textarea>
+        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+          <button type="button" class="btn-secondary" style="background:#64748b;" onclick="closeFeedbackDrawer()">Cancel</button>
+          <button type="button" class="btn-secondary" onclick="submitFeedback()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="submitBtn" onclick="handleSubmit()">Submit</button>
+  <div class="loading" id="loading">Submitting... Please wait.</div>
+  <div class="success-msg" id="successMsg"></div>
+</div>
+
+<div class="modal-overlay" id="notifyModal">
+  <div class="modal-card">
+    <div class="modal-icon" id="notifyIcon"></div>
+    <h3 id="notifyTitle"></h3>
+    <p id="notifyBody"></p>
+    <button class="modal-btn" onclick="closeNotification()">OK</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// Same Supabase project as the admin app — the anon key is meant to be
+// public; row-level security is what actually protects the data (see
+// schema_v2_merge.sql: this key can only INSERT into these three
+// tables, never read or list existing tickets).
+const SUPABASE_URL = 'https://byakcfrvrxhooighfbym.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Z_svHVFuWhlIROkemo7glw_6IY-bxol';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let trackedTicket = null; // holds {id, type, reporter, email} once a lookup succeeds
+
+function toggleForms(){
+  const type = document.getElementById('concernType').value;
+  ['incidentForm','payrollForm','coeForm','trackForm'].forEach(id=>{
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('successMsg').style.display = 'none';
+  if(type) document.getElementById(type+'Form').style.display = 'block';
+  document.getElementById('submitBtn').textContent = type==='track' ? 'Track Ticket' : 'Submit';
+}
+function togglePayrollDescription(){
+  document.getElementById('payrollDescription').style.display =
+    document.getElementById('payrollConcernType').value === 'Others' ? 'block' : 'none';
+}
+function toggleCOEPurpose(){
+  document.getElementById('coeOtherPurpose').style.display =
+    document.getElementById('coePurpose').value === 'Others' ? 'block' : 'none';
+}
+function updateBadgeStyle(status){
+  const badge = document.getElementById('cardBadge');
+  badge.textContent = status;
+  badge.setAttribute('data-status', (status||'').toLowerCase());
+}
+function openFeedbackDrawer(){ document.getElementById('feedbackDrawer').style.display = 'block'; }
+function closeFeedbackDrawer(){ document.getElementById('feedbackDrawer').style.display = 'none'; document.getElementById('feedbackText').value=''; }
+
+function showNotification(title, body, success){
+  document.getElementById('notifyTitle').textContent = title;
+  document.getElementById('notifyBody').textContent = body;
+  const icon = document.getElementById('notifyIcon');
+  icon.textContent = success ? '✓' : '!';
+  icon.style.background = success ? '#dcfce7' : '#fee2e2';
+  icon.style.color = success ? '#16a34a' : '#b91c1c';
+  document.getElementById('notifyModal').classList.add('show');
+}
+function closeNotification(){ document.getElementById('notifyModal').classList.remove('show'); }
+
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadAttachment(file, prefix){
+  const path = `${prefix}/${Date.now()}-${file.name}`.replace(/\s+/g,'_');
+  const { error } = await sb.storage.from('hr-attachments').upload(path, file, { contentType: file.type });
+  if(error) throw error;
+  const { data } = sb.storage.from('hr-attachments').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function handleSubmit(){
+  const type = document.getElementById('concernType').value;
+  const btn = document.getElementById('submitBtn');
+  const loading = document.getElementById('loading');
+  const successMsg = document.getElementById('successMsg');
+
+  if(!type){ showNotification('Selection Required', 'Please select a transaction type first.', false); return; }
+
+  btn.disabled = true;
+  loading.style.display = 'block';
+  successMsg.style.display = 'none';
+
+  try {
+    if(type === 'track'){ await handleTrack(); return; }
+    if(type === 'incident'){ await submitIncident(); }
+    else if(type === 'payroll'){ await submitPayroll(); }
+    else if(type === 'coe'){ await submitCoe(); }
+  } catch(err){
+    showNotification('Submission Error', err.message || String(err), false);
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+async function handleTrack(){
+  const ticketId = document.getElementById('trackTicketId').value.trim();
+  const card = document.getElementById('statusCard');
+  card.style.display = 'none';
+  trackedTicket = null;
+  if(!ticketId){ showNotification('Missing ID', 'Please enter a ticket Reference ID to trace.', false); return; }
+
+  const { data, error } = await sb.rpc('track_ticket', { p_ticket_id: ticketId });
+  if(error){ showNotification('Database Error', error.message, false); return; }
+
+  if(data.status === 'success'){
+    document.getElementById('cardType').textContent = data.type;
+    document.getElementById('cardId').textContent = data.id;
+    document.getElementById('cardDate').textContent = new Date(data.date).toLocaleString();
+    document.getElementById('cardReporter').textContent = data.reporter;
+    document.getElementById('cardDetails').textContent = data.details;
+    updateBadgeStyle(data.ticketStatus);
+    card.style.display = 'block';
+    trackedTicket = { id: data.id, type: data.type, reporter: data.reporter, email: data.email };
+  } else {
+    showNotification('Search Notice', data.message, false);
+  }
+}
+async function submitFeedback(){
+  const message = document.getElementById('feedbackText').value.trim();
+  if(!message || !trackedTicket){ showNotification('Missing Message', 'Please write a message before sending.', false); return; }
+  const { error } = await sb.from('ticket_followups').insert({
+    ticket_id: trackedTicket.id, ticket_type: trackedTicket.type, message,
+    reporter_name: trackedTicket.reporter, reporter_email: trackedTicket.email
+  });
+  if(error){ showNotification('Submission Error', error.message, false); return; }
+  closeFeedbackDrawer();
+  showNotification('Sent!', 'Your follow-up request has been delivered to HR.', true);
+}
+
+async function submitIncident(){
+  const reportedBy = document.getElementById('reportedBy').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const department = document.getElementById('department').value.trim();
+  const employee = document.getElementById('employee').value.trim();
+  const description = document.getElementById('description').value.trim();
+  const files = document.getElementById('incidentFile').files;
+
+  let evidenceUrls = [];
+  for(const file of files){
+    const url = await uploadAttachment(file, 'incidents');
+    evidenceUrls.push({ name: file.name, url });
+  }
+
+  const { data, error } = await sb.from('incidents').insert({
+    reported_by: reportedBy, email, department, employee_involved: employee, summary: description,
+    evidence_urls: evidenceUrls, evidence_links: evidenceUrls.map(a=>a.url).join('\n') || null
+  }).select().single();
+  if(error) throw error;
+
+  finishSubmission('Incident submitted successfully!', data.id);
+}
+async function submitPayroll(){
+  const reportedBy = document.getElementById('payrollReportedBy').value.trim();
+  const department = document.getElementById('payrollDepartment').value.trim();
+  const email = document.getElementById('payrollEmail').value.trim();
+  const concernType = document.getElementById('payrollConcernType').value;
+  const description = concernType === 'Others' ? document.getElementById('payrollDescription').value.trim() : concernType;
+  const file = document.getElementById('payrollFile').files[0];
+
+  if(!file){ showNotification('Attachment Missing', 'Please upload your payslip or screenshot attachment to continue.', false); return; }
+
+  const attachmentUrl = await uploadAttachment(file, 'payroll');
+
+  const { data, error } = await sb.from('payroll_concerns').insert({
+    reported_by: reportedBy, department, email, description, attachment_url: attachmentUrl
+  }).select().single();
+  if(error) throw error;
+
+  finishSubmission('Payroll concern submitted successfully!', data.id);
+}
+async function submitCoe(){
+  const name = document.getElementById('coeName').value.trim();
+  const department = document.getElementById('coeDepartment').value.trim();
+  const email = document.getElementById('coeEmail').value.trim();
+  const purposeSel = document.getElementById('coePurpose').value;
+  const purpose = purposeSel === 'Others' ? document.getElementById('coeOtherPurpose').value.trim() : purposeSel;
+
+  const { data, error } = await sb.from('coe_requests').insert({ name, department, email, purpose }).select().single();
+  if(error) throw error;
+
+  finishSubmission('COE request submitted successfully!', data.id);
+}
+
+function finishSubmission(msg, id){
+  const successMsg = document.getElementById('successMsg');
+  successMsg.style.display = 'block';
+  successMsg.innerHTML = `${msg}<br>Reference ID: ${id}`;
+  showNotification('Submitted Successfully!', `${msg}\nReference ID: ${id}`, true);
+  clearForms();
+}
+function clearForms(){
+  document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+  document.getElementById('concernType').value = '';
+  document.getElementById('payrollConcernType').value = '';
+  document.getElementById('coePurpose').value = '';
+  ['incidentForm','payrollForm','coeForm','trackForm'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('payrollDescription').style.display = 'none';
+  document.getElementById('coeOtherPurpose').style.display = 'none';
+  document.getElementById('statusCard').style.display = 'none';
+  closeFeedbackDrawer();
+}
+</script>
+</body>
+</html>
