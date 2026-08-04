@@ -152,12 +152,14 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 // Same Supabase project as the admin app — the anon key is meant to be
-// public; row-level security is what actually protects the data (see
-// schema_v2_merge.sql: this key can only INSERT into these three
-// tables, never read or list existing tickets).
+// public; row-level security is what actually protects the data.
+// Incident / Payroll / COE submissions go through SECURITY DEFINER
+// RPC functions (submit_incident, submit_payroll, submit_coe) instead
+// of direct table inserts — this avoids the insert().select() RLS
+// read-back issue while keeping anon's table access at zero.
 const SUPABASE_URL = 'https://byakcfrvrxhooighfbym.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Z_svHVFuWhlIROkemo7glw_6IY-bxol';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -290,13 +292,18 @@ async function submitIncident(){
     evidenceUrls.push({ name: file.name, url });
   }
 
-  const { data, error } = await sb.from('incidents').insert({
-    reported_by: reportedBy, email, department, employee_involved: employee, summary: description,
-    evidence_urls: evidenceUrls, evidence_links: evidenceUrls.map(a=>a.url).join('\n') || null
-  }).select().single();
+  const { data: newId, error } = await sb.rpc('submit_incident', {
+    p_reported_by: reportedBy,
+    p_email: email,
+    p_department: department,
+    p_employee: employee,
+    p_summary: description,
+    p_evidence_urls: evidenceUrls,
+    p_evidence_links: evidenceUrls.map(a=>a.url).join('\n') || null
+  });
   if(error) throw error;
 
-  finishSubmission('Incident submitted successfully!', data.id);
+  finishSubmission('Incident submitted successfully!', newId);
 }
 async function submitPayroll(){
   const reportedBy = document.getElementById('payrollReportedBy').value.trim();
@@ -310,12 +317,16 @@ async function submitPayroll(){
 
   const attachmentUrl = await uploadAttachment(file, 'payroll');
 
-  const { data, error } = await sb.from('payroll_concerns').insert({
-    reported_by: reportedBy, department, email, description, attachment_url: attachmentUrl
-  }).select().single();
+  const { data: newId, error } = await sb.rpc('submit_payroll', {
+    p_reported_by: reportedBy,
+    p_department: department,
+    p_email: email,
+    p_description: description,
+    p_attachment_url: attachmentUrl
+  });
   if(error) throw error;
 
-  finishSubmission('Payroll concern submitted successfully!', data.id);
+  finishSubmission('Payroll concern submitted successfully!', newId);
 }
 async function submitCoe(){
   const name = document.getElementById('coeName').value.trim();
@@ -324,10 +335,15 @@ async function submitCoe(){
   const purposeSel = document.getElementById('coePurpose').value;
   const purpose = purposeSel === 'Others' ? document.getElementById('coeOtherPurpose').value.trim() : purposeSel;
 
-  const { data, error } = await sb.from('coe_requests').insert({ name, department, email, purpose }).select().single();
+  const { data: newId, error } = await sb.rpc('submit_coe', {
+    p_name: name,
+    p_department: department,
+    p_email: email,
+    p_purpose: purpose
+  });
   if(error) throw error;
 
-  finishSubmission('COE request submitted successfully!', data.id);
+  finishSubmission('COE request submitted successfully!', newId);
 }
 
 function finishSubmission(msg, id){
