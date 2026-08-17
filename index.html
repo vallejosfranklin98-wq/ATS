@@ -96,6 +96,9 @@
   .id-mono{font-family:var(--font-mono);font-size:11.5px;color:var(--blue);font-variant-numeric:tabular-nums;letter-spacing:.02em;font-weight:600;}
   .muted{color:var(--ink-dim);}
   .clip{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bal-list{display:flex;flex-direction:column;gap:2px;padding:2px 0;}
+  .bal-row{font-size:12.5px;color:var(--ink);white-space:nowrap;}
+  .bal-row .bal-val{font-family:var(--font-mono);font-weight:600;font-variant-numeric:tabular-nums;}
 
   .pill{display:inline-block;font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:100px;letter-spacing:.03em;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;}
   .pill.applied,.pill.shortlisted{background:#e3edff;color:#2f6fed;}
@@ -1478,6 +1481,11 @@ function nextLeaveId(){
 function balancesForEmployee(empId){
   return DB.leaveBalances.filter(b=>b.employeeId===empId);
 }
+const LEAVE_TYPE_ORDER = ['Sick','Vacation','Birthday','Bereavement'];
+function leaveTypeSort(a,b){
+  const ia = LEAVE_TYPE_ORDER.indexOf(a.leaveType); const ib = LEAVE_TYPE_ORDER.indexOf(b.leaveType);
+  return (ia===-1?99:ia) - (ib===-1?99:ib);
+}
 function renderEmployees(){
   const search = (document.getElementById('emp-search')?.value||'').toLowerCase();
   const statusFilter = document.getElementById('emp-filter-status')?.value||'';
@@ -1493,15 +1501,17 @@ function renderEmployees(){
     return;
   }
   tbody.innerHTML = rows.map(e=>{
-    const bals = balancesForEmployee(e.id);
-    const balStr = bals.length ? bals.map(b=>`${escapeHtml(b.leaveType)}: ${b.available ?? 0}`).join(' · ') : '—';
+    const bals = balancesForEmployee(e.id).filter(b=>b.leaveType!=='New Leave Type').sort(leaveTypeSort);
+    const balStr = bals.length
+      ? `<div class="bal-list">${bals.map(b=>`<div class="bal-row">${escapeHtml(b.leaveType)} Leave - <span class="bal-val">${b.available ?? 0}</span></div>`).join('')}</div>`
+      : '—';
     return `<tr>
       <td class="id-mono">${escapeHtml(e.id)}</td>
       <td>${escapeHtml(e.fullName||[e.firstName,e.lastName].filter(Boolean).join(' '))}</td>
       <td class="muted">${escapeHtml(e.department)||'—'}</td>
       <td class="muted">${e.hireDate||'—'}</td>
       <td><span class="badge-status ${e.isActive!==false?'filled':'open'}">${e.isActive!==false?'Active':'Resigned'}</span></td>
-      <td class="clip" style="max-width:320px;">${balStr}</td>
+      <td class="clip" style="max-width:180px;white-space:normal;overflow:visible;">${balStr}</td>
       <td><div class="actions">
         <button class="iconbtn" onclick="openBalancesModal('${e.id}')">edit balances</button>
         <button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button>
@@ -1618,7 +1628,12 @@ function openBalancesModal(employeeId){
   if(!emp) return;
   document.getElementById('bal-edit-employee').value = employeeId;
   document.getElementById('balances-modal-title').textContent = `Edit Leave Credits — ${emp.fullName||employeeId}`;
-  const types = DB.settings.leave_type.length ? DB.settings.leave_type : [...new Set(DB.leaveBalances.map(b=>b.leaveType))];
+  const types = (DB.settings.leave_type.length ? DB.settings.leave_type : [...new Set(DB.leaveBalances.map(b=>b.leaveType))])
+    .filter(t=>t!=='New Leave Type')
+    .sort((a,b)=>{
+      const ia = LEAVE_TYPE_ORDER.indexOf(a); const ib = LEAVE_TYPE_ORDER.indexOf(b);
+      return (ia===-1?99:ia) - (ib===-1?99:ib);
+    });
   const existing = balancesForEmployee(employeeId);
   document.getElementById('balances-fields').innerHTML = types.map(t=>{
     const b = existing.find(x=>x.leaveType===t);
