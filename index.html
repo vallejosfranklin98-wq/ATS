@@ -222,6 +222,10 @@
       <button class="navbtn" data-view="payroll"><span class="n"></span> Salary Disputes <span class="sidebar-badge" id="nb-payroll" style="display:none;"></span></button>
       <button class="navbtn" data-view="coe"><span class="n"></span> COE Requests <span class="sidebar-badge" id="nb-coe" style="display:none;"></span></button>
 
+      <div class="navlabel">Leave Management</div>
+      <button class="navbtn" data-view="employees"><span class="n"></span> Employees</button>
+      <button class="navbtn" data-view="leave"><span class="n"></span> Leave Records</button>
+
       <div class="navlabel">Configure</div>
       <button class="navbtn" data-view="settings"><span class="n"></span> Settings</button>
     </nav>
@@ -265,6 +269,12 @@
           <div class="tile-eyebrow">HR Requests</div>
           <h3>COE Requests</h3>
           <p>Certificate of Employment requests to process.</p>
+        </div>
+        <div class="tile accent-purple" onclick="goToView('leave')">
+          <span class="tile-badge zero" id="tile-leave">0</span>
+          <div class="tile-eyebrow">Leave Management</div>
+          <h3>Leave Records</h3>
+          <p>Employee leave filings and balances.</p>
         </div>
       </div>
     </section>
@@ -434,6 +444,60 @@
       </div>
     </section>
 
+    <!-- EMPLOYEES -->
+    <section class="view" id="view-employees">
+      <div class="pagehead">
+        <div>
+          <h1>Employees</h1>
+          <p>Roster with leave balances per type</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="emp-search" placeholder="Search name, ID, or department…" oninput="renderEmployees()">
+        <select id="emp-filter-status" onchange="renderEmployees()">
+          <option value="">Active + Resigned</option>
+          <option value="active">Active only</option>
+          <option value="inactive">Resigned only</option>
+        </select>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Name</th><th>Department</th><th>Hire Date</th><th>Status</th><th>Balances</th><th></th>
+          </tr></thead>
+          <tbody id="employees-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LEAVE RECORDS -->
+    <section class="view" id="view-leave">
+      <div class="pagehead">
+        <div>
+          <h1>Leave Records</h1>
+          <p>Filed leave transactions</p>
+        </div>
+        <button class="btn" onclick="openLeaveModal()">+ File Leave</button>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="leave-search" placeholder="Search employee name or ID…" oninput="renderLeaveTransactions()">
+        <select id="leave-filter-type" onchange="renderLeaveTransactions()"><option value="">All types</option></select>
+        <select id="leave-filter-status" onchange="renderLeaveTransactions()">
+          <option value="">All statuses</option>
+          <option>Approved</option><option>Pending To Immediate Supervisor</option>
+          <option>Rejected</option><option>Cancelled by Admin</option><option>Cancelled by User</option>
+        </select>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr>
+            <th>Employee</th><th>Type</th><th>Filed</th><th>From</th><th>To</th><th>With Pay</th><th>W/O Pay</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="leave-table"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="view-settings">
       <div class="pagehead">
@@ -458,6 +522,11 @@
         <h2>Source Options</h2>
         <div id="list-source"></div>
         <div class="toolbar" style="margin-top:12px;"><input id="new-source" placeholder="Add source…" style="max-width:240px;"><button class="btn small" onclick="addSetting('source')">Add</button></div>
+      </div>
+      <div class="panel accent-purple">
+        <h2>Leave Type Options</h2>
+        <div id="list-leave_type"></div>
+        <div class="toolbar" style="margin-top:12px;"><input id="new-leave_type" placeholder="Add leave type…" style="max-width:240px;"><button class="btn small" onclick="addSetting('leave_type')">Add</button></div>
       </div>
     </section>
 
@@ -641,6 +710,44 @@
   </div>
 </div>
 
+<!-- LEAVE MODAL -->
+<div class="overlay" id="modal-leave">
+  <div class="modal">
+    <h3 id="leave-modal-title">File Leave</h3>
+    <input type="hidden" id="leave-edit-id">
+    <div class="field"><label>Employee</label>
+      <select id="f-leave-employee"></select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Leave Type</label><select id="f-leave-type"></select></div>
+      <div class="field"><label>Date Filed</label><input type="date" id="f-leave-filed"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date From</label><input type="date" id="f-leave-from"></div>
+      <div class="field"><label>Date To</label><input type="date" id="f-leave-to"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>With Pay (days)</label><input type="number" step="0.5" id="f-leave-withpay" value="0"></div>
+      <div class="field"><label>Without Pay (days)</label><input type="number" step="0.5" id="f-leave-wopay" value="0"></div>
+    </div>
+    <div class="field"><label>Reason</label><textarea id="f-leave-reason" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Status</label>
+        <select id="f-leave-status">
+          <option>Pending To Immediate Supervisor</option><option>Approved</option>
+          <option>Rejected</option><option>Cancelled by Admin</option><option>Cancelled by User</option>
+        </select>
+      </div>
+      <div class="field"><label>Reject Reason</label><input id="f-leave-rejectreason"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="deleteLeave()" id="leave-delete-btn" style="display:none;color:var(--red);border-color:var(--red);">Delete</button>
+      <button class="btn ghost" onclick="closeModal('modal-leave')">Cancel</button>
+      <button class="btn" onclick="saveLeave()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---------- SUPABASE CONFIG ----------
 const SUPABASE_URL = 'https://byakcfrvrxhooighfbym.supabase.co';
@@ -651,7 +758,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let DB = {
   applicants: [], interviews: [], vacancies: [],
   incidents: [], payroll: [], coe: [],
-  settings: { status: [], position: [], source: [] }
+  employees: [], leaveBalances: [], leaveTransactions: [],
+  settings: { status: [], position: [], source: [], leave_type: [] }
 };
 
 const STATUS_CLASS = {
@@ -712,16 +820,19 @@ sb.auth.onAuthStateChange((event) => {
 // DATA LOADING
 // ==========================================
 async function loadDB(){
-  const [appsRes, intsRes, vacsRes, setsRes, incRes, prRes, coeRes] = await Promise.all([
+  const [appsRes, intsRes, vacsRes, setsRes, incRes, prRes, coeRes, empRes, balRes, leaveRes] = await Promise.all([
     sb.from('applicants').select('*').order('created_at',{ascending:false}),
     sb.from('interviews').select('*'),
     sb.from('vacancies').select('*').order('created_at',{ascending:false}),
     sb.from('settings').select('*'),
     sb.from('incidents').select('*').order('created_at',{ascending:false}),
     sb.from('payroll_concerns').select('*').order('created_at',{ascending:false}),
-    sb.from('coe_requests').select('*').order('created_at',{ascending:false})
+    sb.from('coe_requests').select('*').order('created_at',{ascending:false}),
+    sb.from('employees').select('*').order('id',{ascending:true}),
+    sb.from('leave_balances').select('*'),
+    sb.from('leave_transactions').select('*').order('date_filed',{ascending:false})
   ]);
-  [appsRes,intsRes,vacsRes,setsRes,incRes,prRes,coeRes].forEach(r=>{ if(r.error) console.error(r.error); });
+  [appsRes,intsRes,vacsRes,setsRes,incRes,prRes,coeRes,empRes,balRes,leaveRes].forEach(r=>{ if(r.error) console.error(r.error); });
 
   DB.applicants = (appsRes.data||[]).map(a=>({
     id:a.id, dateApplied:a.date_applied, name:a.name, position:a.position, source:a.source,
@@ -736,8 +847,22 @@ async function loadDB(){
     dateNeeded:v.date_needed, requestedBy:v.requested_by, department:v.department,
     mrfStatus:v.mrf_status, status:v.status
   }));
-  DB.settings = { status:[], position:[], source:[] };
+  DB.settings = { status:[], position:[], source:[], leave_type:[] };
   (setsRes.data||[]).forEach(s=>{ if(DB.settings[s.category]) DB.settings[s.category].push(s.value); });
+
+  DB.employees = (empRes.data||[]).map(e=>({
+    id:e.id, lastName:e.last_name, firstName:e.first_name, middleName:e.middle_name, fullName:e.full_name,
+    department:e.department, hireDate:e.hire_date, regDate:e.regularization_date, isActive:e.is_active
+  }));
+  DB.leaveBalances = (balRes.data||[]).map(b=>({
+    employeeId:b.employee_id, leaveType:b.leave_type, unusedYtd:b.unused_leave_credit_ytd, available:b.available_leave_credits
+  }));
+  DB.leaveTransactions = (leaveRes.data||[]).map(x=>({
+    id:x.id, employeeId:x.employee_id, name:x.name, leaveType:x.leave_type, dateFiled:x.date_filed,
+    dateFrom:x.date_from, dateTo:x.date_to, withPayDays:x.with_pay_days, withoutPayDays:x.without_pay_days,
+    reason:x.reason, status:x.status, rejectReason:x.reject_reason,
+    dateApproved:x.date_approved_supervisor, dateRejected:x.date_rejected_supervisor
+  }));
 
   DB.incidents = (incRes.data||[]).map(x=>({
     id:x.id, dateReported:x.date_reported, reportedBy:x.reported_by, email:x.email, department:x.department,
@@ -1331,6 +1456,147 @@ function renderCoe(){
 }
 
 // ==========================================
+// EMPLOYEES & LEAVE
+// ==========================================
+function nextLeaveId(){
+  return 'LV-' + String(DB.leaveTransactions.length + 1).padStart(4,'0');
+}
+function balancesForEmployee(empId){
+  return DB.leaveBalances.filter(b=>b.employeeId===empId);
+}
+function renderEmployees(){
+  const search = (document.getElementById('emp-search')?.value||'').toLowerCase();
+  const statusFilter = document.getElementById('emp-filter-status')?.value||'';
+  let rows = DB.employees.filter(e=>{
+    const matchesSearch = !search || [e.id,e.fullName,e.department].some(v=>(v||'').toString().toLowerCase().includes(search));
+    const active = e.isActive!==false;
+    const matchesStatus = statusFilter==='' || (statusFilter==='active'?active:!active);
+    return matchesSearch && matchesStatus;
+  });
+  const tbody = document.getElementById('employees-table');
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="big">No employees found</div>Import the leave roster to populate this list.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(e=>{
+    const bals = balancesForEmployee(e.id);
+    const balStr = bals.length ? bals.map(b=>`${escapeHtml(b.leaveType)}: ${b.available ?? 0}`).join(' · ') : '—';
+    return `<tr>
+      <td class="id-mono">${escapeHtml(e.id)}</td>
+      <td>${escapeHtml(e.fullName||[e.firstName,e.lastName].filter(Boolean).join(' '))}</td>
+      <td class="muted">${escapeHtml(e.department)||'—'}</td>
+      <td class="muted">${e.hireDate||'—'}</td>
+      <td><span class="badge-status ${e.isActive!==false?'filled':'open'}">${e.isActive!==false?'Active':'Resigned'}</span></td>
+      <td class="clip" style="max-width:320px;">${balStr}</td>
+      <td><div class="actions"><button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button></div></td>
+    </tr>`;
+  }).join('');
+}
+function renderLeaveTransactions(){
+  const search = (document.getElementById('leave-search')?.value||'').toLowerCase();
+  const typeFilter = document.getElementById('leave-filter-type')?.value||'';
+  const statusFilter = document.getElementById('leave-filter-status')?.value||'';
+  const typeSel = document.getElementById('leave-filter-type');
+  if(typeSel && typeSel.options.length<=1){
+    typeSel.innerHTML = '<option value="">All types</option>' + DB.settings.leave_type.map(t=>`<option>${escapeHtml(t)}</option>`).join('');
+  }
+  let rows = DB.leaveTransactions.filter(x=>{
+    const matchesSearch = !search || [x.employeeId,x.name].some(v=>(v||'').toString().toLowerCase().includes(search));
+    const matchesType = !typeFilter || x.leaveType===typeFilter;
+    const matchesStatus = !statusFilter || x.status===statusFilter;
+    return matchesSearch && matchesType && matchesStatus;
+  });
+  const tbody = document.getElementById('leave-table');
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="big">No leave records</div>File a leave or import the leave report.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(x=>`
+    <tr>
+      <td>${escapeHtml(x.name)}<div class="muted id-mono" style="font-size:10.5px;">${escapeHtml(x.employeeId)}</div></td>
+      <td class="muted">${escapeHtml(x.leaveType)}</td>
+      <td class="muted">${x.dateFiled||'—'}</td>
+      <td class="muted">${x.dateFrom||'—'}</td>
+      <td class="muted">${x.dateTo||'—'}</td>
+      <td>${x.withPayDays ?? 0}</td>
+      <td>${x.withoutPayDays ?? 0}</td>
+      <td><span class="pill ${hrPillClass(x.status)}">${escapeHtml(x.status)||'—'}</span></td>
+      <td><div class="actions"><button class="iconbtn" onclick="openLeaveModal('${x.id}')">edit</button></div></td>
+    </tr>`).join('');
+}
+function openLeaveModal(id, presetEmployeeId){
+  const empSel = document.getElementById('f-leave-employee');
+  empSel.innerHTML = DB.employees.map(e=>`<option value="${escapeHtml(e.id)}">${escapeHtml(e.id)} — ${escapeHtml(e.fullName||'')}</option>`).join('');
+  const typeSel = document.getElementById('f-leave-type');
+  typeSel.innerHTML = DB.settings.leave_type.map(t=>`<option>${escapeHtml(t)}</option>`).join('');
+  document.getElementById('leave-delete-btn').style.display = id ? 'inline-block' : 'none';
+  if(id){
+    const x = DB.leaveTransactions.find(r=>r.id===id);
+    document.getElementById('leave-modal-title').textContent = `Leave ${x.id}`;
+    document.getElementById('leave-edit-id').value = id;
+    empSel.value = x.employeeId;
+    typeSel.value = x.leaveType;
+    document.getElementById('f-leave-filed').value = x.dateFiled||'';
+    document.getElementById('f-leave-from').value = x.dateFrom||'';
+    document.getElementById('f-leave-to').value = x.dateTo||'';
+    document.getElementById('f-leave-withpay').value = x.withPayDays ?? 0;
+    document.getElementById('f-leave-wopay').value = x.withoutPayDays ?? 0;
+    document.getElementById('f-leave-reason').value = x.reason||'';
+    document.getElementById('f-leave-status').value = x.status||'Pending To Immediate Supervisor';
+    document.getElementById('f-leave-rejectreason').value = x.rejectReason||'';
+  } else {
+    document.getElementById('leave-modal-title').textContent = 'File Leave';
+    document.getElementById('leave-edit-id').value = '';
+    if(presetEmployeeId) empSel.value = presetEmployeeId;
+    document.getElementById('f-leave-filed').value = new Date().toISOString().slice(0,10);
+    ['f-leave-from','f-leave-to','f-leave-reason','f-leave-rejectreason'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f-leave-withpay').value = 0;
+    document.getElementById('f-leave-wopay').value = 0;
+    document.getElementById('f-leave-status').value = 'Pending To Immediate Supervisor';
+  }
+  document.getElementById('modal-leave').classList.add('open');
+}
+async function saveLeave(){
+  const editId = document.getElementById('leave-edit-id').value;
+  const employeeId = document.getElementById('f-leave-employee').value;
+  if(!employeeId){ alert('Select an employee.'); return; }
+  const emp = DB.employees.find(e=>e.id===employeeId);
+  const payload = {
+    employee_id: employeeId,
+    name: emp ? (emp.fullName||[emp.firstName,emp.lastName].filter(Boolean).join(' ')) : '',
+    leave_type: document.getElementById('f-leave-type').value,
+    date_filed: document.getElementById('f-leave-filed').value || null,
+    date_from: document.getElementById('f-leave-from').value || null,
+    date_to: document.getElementById('f-leave-to').value || null,
+    with_pay_days: parseFloat(document.getElementById('f-leave-withpay').value)||0,
+    without_pay_days: parseFloat(document.getElementById('f-leave-wopay').value)||0,
+    reason: document.getElementById('f-leave-reason').value.trim(),
+    status: document.getElementById('f-leave-status').value,
+    reject_reason: document.getElementById('f-leave-rejectreason').value.trim()
+  };
+  if(editId){
+    const { error } = await sb.from('leave_transactions').update(payload).eq('id', editId);
+    if(error){ alert('Save failed: '+error.message); return; }
+  } else {
+    payload.id = nextLeaveId();
+    const { error } = await sb.from('leave_transactions').insert(payload);
+    if(error){ alert('Save failed: '+error.message); return; }
+  }
+  closeModal('modal-leave');
+  await loadDB();
+  renderAll();
+}
+async function deleteLeave(){
+  const id = document.getElementById('leave-edit-id').value;
+  if(!id || !confirm('Delete this leave record?')) return;
+  const { error } = await sb.from('leave_transactions').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  closeModal('modal-leave');
+  await loadDB();
+  renderAll();
+}
+
+// ==========================================
 // SETTINGS
 // ==========================================
 function renderSettingsList(key, containerId){
@@ -1377,6 +1643,8 @@ function renderBadges(){
     const tile = document.getElementById('tile-'+key);
     if(tile){ tile.textContent = n; tile.classList.toggle('zero', n===0); }
   });
+  const leaveTile = document.getElementById('tile-leave');
+  if(leaveTile) leaveTile.textContent = DB.employees.length;
 }
 
 // ==========================================
@@ -1437,9 +1705,12 @@ function renderAll(){
   renderIncidents();
   renderPayroll();
   renderCoe();
+  renderEmployees();
+  renderLeaveTransactions();
   renderSettingsList('status','list-status');
   renderSettingsList('position','list-position');
   renderSettingsList('source','list-source');
+  renderSettingsList('leave_type','list-leave_type');
 }
 
 // ==========================================
