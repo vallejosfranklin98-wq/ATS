@@ -748,6 +748,20 @@
   </div>
 </div>
 
+<!-- BALANCES MODAL -->
+<div class="overlay" id="modal-balances">
+  <div class="modal">
+    <h3 id="balances-modal-title">Edit Leave Credits</h3>
+    <input type="hidden" id="bal-edit-employee">
+    <p class="muted" style="font-size:12.5px;margin:-8px 0 16px;">Enter each leave type's available credits manually. Unused YTD is set equal to available unless you enter otherwise.</p>
+    <div id="balances-fields"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-balances')">Cancel</button>
+      <button class="btn" onclick="saveBalances()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---------- SUPABASE CONFIG ----------
 const SUPABASE_URL = 'https://byakcfrvrxhooighfbym.supabase.co';
@@ -1488,7 +1502,10 @@ function renderEmployees(){
       <td class="muted">${e.hireDate||'—'}</td>
       <td><span class="badge-status ${e.isActive!==false?'filled':'open'}">${e.isActive!==false?'Active':'Resigned'}</span></td>
       <td class="clip" style="max-width:320px;">${balStr}</td>
-      <td><div class="actions"><button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button></div></td>
+      <td><div class="actions">
+        <button class="iconbtn" onclick="openBalancesModal('${e.id}')">edit balances</button>
+        <button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -1592,6 +1609,50 @@ async function deleteLeave(){
   const { error } = await sb.from('leave_transactions').delete().eq('id', id);
   if(error){ alert('Delete failed: '+error.message); return; }
   closeModal('modal-leave');
+  await loadDB();
+  renderAll();
+}
+
+function openBalancesModal(employeeId){
+  const emp = DB.employees.find(e=>e.id===employeeId);
+  if(!emp) return;
+  document.getElementById('bal-edit-employee').value = employeeId;
+  document.getElementById('balances-modal-title').textContent = `Edit Leave Credits — ${emp.fullName||employeeId}`;
+  const types = DB.settings.leave_type.length ? DB.settings.leave_type : [...new Set(DB.leaveBalances.map(b=>b.leaveType))];
+  const existing = balancesForEmployee(employeeId);
+  document.getElementById('balances-fields').innerHTML = types.map(t=>{
+    const b = existing.find(x=>x.leaveType===t);
+    const avail = b ? (b.available ?? 0) : 0;
+    const ytd = b ? (b.unusedYtd ?? avail) : 0;
+    const key = t.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<div class="field-row" style="margin-bottom:10px;">
+      <div class="field"><label>${escapeHtml(t)} — Available</label>
+        <input type="number" step="0.01" id="bal-avail-${key}" value="${avail}" data-type="${escapeHtml(t)}">
+      </div>
+      <div class="field"><label>${escapeHtml(t)} — Unused YTD</label>
+        <input type="number" step="0.01" id="bal-ytd-${key}" value="${ytd}">
+      </div>
+    </div>`;
+  }).join('') || `<div class="empty">Add leave types in Settings first.</div>`;
+  document.getElementById('modal-balances').classList.add('open');
+}
+async function saveBalances(){
+  const employeeId = document.getElementById('bal-edit-employee').value;
+  const types = DB.settings.leave_type.length ? DB.settings.leave_type : [...new Set(DB.leaveBalances.map(b=>b.leaveType))];
+  const rows = types.map(t=>{
+    const key = t.replace(/[^a-zA-Z0-9]/g,'_');
+    const availEl = document.getElementById(`bal-avail-${key}`);
+    const ytdEl = document.getElementById(`bal-ytd-${key}`);
+    return {
+      employee_id: employeeId,
+      leave_type: t,
+      available_leave_credits: parseFloat(availEl.value)||0,
+      unused_leave_credit_ytd: parseFloat(ytdEl.value)||0
+    };
+  });
+  const { error } = await sb.from('leave_balances').upsert(rows, { onConflict: 'employee_id,leave_type' });
+  if(error){ alert('Save failed: '+error.message); return; }
+  closeModal('modal-balances');
   await loadDB();
   renderAll();
 }
