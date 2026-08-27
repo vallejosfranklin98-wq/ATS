@@ -179,6 +179,69 @@
 
   select.pill-select{-webkit-appearance:none;appearance:none;border:none;padding:3px 22px 3px 9px;font-family:var(--font-mono);font-size:10px;border-radius:100px;background-repeat:no-repeat;background-position:right 7px center;background-size:8px;}
 
+  /* ===== HOME DASHBOARD (image-matched layout) ===== */
+  .dash-topbar{display:flex;align-items:center;gap:16px;}
+  .dash-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 14px;width:260px;color:var(--ink-dim);font-size:13px;}
+  .dash-search svg{flex-shrink:0;opacity:.6;}
+  .dash-bell{position:relative;width:38px;height:38px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-dim);}
+  .dash-bell .dot{position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;font-family:var(--font-mono);font-size:9.5px;font-weight:700;border-radius:100px;padding:1px 5px;border:2px solid var(--bg);}
+  .dash-avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13px;flex-shrink:0;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:26px 0;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(28,37,54,.04);}
+  .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .stat-icon svg{width:20px;height:20px;}
+  .stat-num{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--ink);line-height:1;}
+  .stat-lbl{font-size:12.5px;color:var(--ink-dim);margin-top:3px;}
+  .stat-sub{font-family:var(--font-mono);font-size:11px;font-weight:600;margin-top:2px;}
+
+  .home-grid{display:grid;grid-template-columns:1fr 1.25fr 1.35fr;gap:20px;align-items:start;}
+
+  .qa-item{display:flex;align-items:center;gap:12px;padding:11px 6px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:8px;transition:background .12s;}
+  .qa-item:hover{background:var(--surface-alt);}
+  .qa-item:last-child{border-bottom:none;}
+  .qa-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .qa-icon svg{width:17px;height:17px;}
+  .qa-text{flex:1;min-width:0;}
+  .qa-text .t{font-size:13px;font-weight:600;color:var(--ink);}
+  .qa-text .s{font-size:11px;color:var(--ink-dim);margin-top:1px;}
+  .qa-chev{color:var(--ink-dim);flex-shrink:0;}
+
+  .summary-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .summary-select{font-family:var(--font-mono);font-size:11px;padding:5px 10px;}
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut{position:relative;width:150px;height:150px;border-radius:50%;flex-shrink:0;}
+  .donut-hole{position:absolute;inset:22px;background:var(--surface);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut-hole .n{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--ink);line-height:1;}
+  .donut-hole .l{font-size:9.5px;color:var(--ink-dim);margin-top:3px;text-align:center;}
+  .legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0;}
+  .legend-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .legend-name{flex:1;color:var(--ink);}
+  .legend-val{font-family:var(--font-mono);color:var(--ink-dim);font-size:11px;}
+
+  .sched-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start;}
+  .sched-item:last-child{border-bottom:none;}
+  .sched-date{width:44px;text-align:center;background:var(--surface-alt);border-radius:8px;padding:6px 0;flex-shrink:0;}
+  .sched-date .mo{font-family:var(--font-mono);font-size:9px;color:var(--blue);font-weight:700;letter-spacing:.05em;}
+  .sched-date .day{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);}
+  .sched-text{flex:1;min-width:0;}
+  .sched-text .t{font-size:12.5px;font-weight:600;color:var(--ink);}
+  .sched-text .s{font-size:11px;color:var(--ink-dim);margin-top:1px;}
+  .sched-time{font-family:var(--font-mono);font-size:11px;color:var(--ink-dim);flex-shrink:0;}
+
+  .activity-head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .activity-link{font-size:12px;color:var(--blue);text-decoration:none;font-weight:600;}
+  .activity-type{display:flex;align-items:center;gap:8px;}
+  .activity-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .activity-icon svg{width:13px;height:13px;}
+
+  @media (max-width:1150px){
+    .home-grid{grid-template-columns:1fr;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .dash-search{width:180px;}
+  }
+
   @media (max-width:900px){
     .app{grid-template-columns:1fr;}
     .sidebar{display:none;}
@@ -247,39 +310,58 @@
       <div class="pagehead">
         <div>
           <h1>DASHBOARD</h1>
-          <p>Choose a module to work in. Red counts are items you haven't opened yet.</p>
+          <p id="home-welcome">Welcome back! Here's your HR overview.</p>
+        </div>
+        <div class="dash-topbar">
+          <div class="dash-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+            Search anything…
+          </div>
+          <div class="dash-bell">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+            <span class="dot" id="home-bell-count">0</span>
+          </div>
+          <div class="dash-avatar" id="home-avatar">–</div>
         </div>
       </div>
-      <div class="tile-grid">
-        <div class="tile" onclick="goToView('dashboard')">
-          <span class="tile-badge" id="tile-applicants">0</span>
-          <div class="tile-eyebrow">Recruitment</div>
-          <h3>Applicant Tracking</h3>
-          <p>Pipeline, interviews, and manpower requisitions.</p>
+
+      <!-- STAT CARDS -->
+      <div class="stat-row" id="home-stats"></div>
+
+      <!-- MAIN 3-COLUMN GRID -->
+      <div class="home-grid">
+        <!-- QUICK ACCESS -->
+        <div class="panel" style="margin-bottom:0;">
+          <h2>Quick Access</h2>
+          <div id="home-quickaccess"></div>
         </div>
-        <div class="tile accent-purple" onclick="goToView('incidents')">
-          <span class="tile-badge" id="tile-incidents">0</span>
-          <div class="tile-eyebrow">HR Requests</div>
-          <h3>Incident Reports</h3>
-          <p>Employee-submitted incidents awaiting review.</p>
+
+        <!-- SUMMARY + UPCOMING SCHEDULE -->
+        <div>
+          <div class="panel accent-purple">
+            <div class="summary-head">
+              <h2 style="margin:0;">Summary</h2>
+              <select class="summary-select"><option>This Week</option><option>This Month</option></select>
+            </div>
+            <div id="home-donut"></div>
+          </div>
+          <div class="panel accent-gold">
+            <h2>Upcoming Schedule</h2>
+            <div id="home-schedule"></div>
+            <div style="margin-top:10px;"><a href="#" class="activity-link" onclick="goToView('interviews');return false;">View calendar</a></div>
+          </div>
         </div>
-        <div class="tile accent-gold" onclick="goToView('payroll')">
-          <span class="tile-badge" id="tile-payroll">0</span>
-          <div class="tile-eyebrow">HR Requests</div>
-          <h3>Salary Disputes</h3>
-          <p>Payroll concerns awaiting audit.</p>
-        </div>
-        <div class="tile accent-green" onclick="goToView('coe')">
-          <span class="tile-badge" id="tile-coe">0</span>
-          <div class="tile-eyebrow">HR Requests</div>
-          <h3>COE Requests</h3>
-          <p>Certificate of Employment requests to process.</p>
-        </div>
-        <div class="tile accent-purple" onclick="goToView('offboarding')">
-          <span class="tile-badge zero" id="tile-offboarding">0</span>
-          <div class="tile-eyebrow">Offboarding</div>
-          <h3>Offboarding</h3>
-          <p>Resignation, clearance, and exit tracking.</p>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="panel accent-green" style="margin-bottom:0;">
+          <div class="activity-head-row">
+            <h2 style="margin:0;">Recent Activity</h2>
+            <a href="#" class="activity-link" onclick="goToView('applicants');return false;">View all</a>
+          </div>
+          <table>
+            <thead><tr><th>Type</th><th>Description</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="home-activity"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1579,6 +1661,160 @@ function renderBadges(){
 }
 
 // ==========================================
+// HOME DASHBOARD (image-matched overview)
+// ==========================================
+const HOME_ICONS = {
+  applicants: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  incidents: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86l-8.18 14.14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-2.99L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  payroll: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  coe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="12" y2="11"/></svg>',
+  offboarding: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>'
+};
+const HOME_COLORS = {
+  applicants:{bg:'#e3edff', fg:'#2f6fed'},
+  incidents:{bg:'#efeafe', fg:'#7c5cf0'},
+  payroll:{bg:'#fdf1da', fg:'#a5710f'},
+  coe:{bg:'#e2f6ec', fg:'#18a35d'},
+  offboarding:{bg:'#efeafe', fg:'#7c5cf0'}
+};
+
+function daysAgo(dateStr, n){
+  if(!dateStr) return false;
+  const d = new Date(dateStr);
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-n);
+  return d >= cutoff;
+}
+
+function renderHomeStats(){
+  const newApplicants = DB.applicants.filter(a=>daysAgo(a.dateApplied,7)).length;
+  const pendingIncidents = DB.incidents.filter(x=>(x.status||'').toLowerCase()==='pending').length;
+  const resolvedPayroll = DB.payroll.filter(x=>(x.status||'').toLowerCase()==='resolved').length;
+  const pendingCoe = DB.coe.filter(x=>(x.status||'').toLowerCase()==='pending').length;
+
+  const cards = [
+    {key:'applicants', num: DB.applicants.length, lbl:'Total Applicants', sub:`+${newApplicants} this week`, subColor:'var(--blue)'},
+    {key:'incidents', num: DB.incidents.length, lbl:'Incident Reports', sub:`+${pendingIncidents} pending`, subColor:'var(--purple)'},
+    {key:'payroll', num: DB.payroll.length, lbl:'Salary Disputes', sub:`${resolvedPayroll} resolved`, subColor:'var(--gold)'},
+    {key:'coe', num: DB.coe.length, lbl:'COE Requests', sub:`+${pendingCoe} pending`, subColor:'var(--green)'},
+    {key:'offboarding', num: DB.offboarding.length, lbl:'Offboarding', sub:'Pending', subColor:'var(--purple)'}
+  ];
+  document.getElementById('home-stats').innerHTML = cards.map(c=>`
+    <div class="stat-card">
+      <div class="stat-icon" style="background:${HOME_COLORS[c.key].bg};color:${HOME_COLORS[c.key].fg};">${HOME_ICONS[c.key]}</div>
+      <div>
+        <div class="stat-num">${c.num}</div>
+        <div class="stat-lbl">${c.lbl}</div>
+        <div class="stat-sub" style="color:${c.subColor};">${c.sub}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderHomeQuickAccess(){
+  const items = [
+    {key:'applicants', view:'dashboard', t:'Applicant Tracking', s:'Track, review, and manage applicants'},
+    {key:'incidents', view:'incidents', t:'Incident Reports', s:'Employee-submitted incidents'},
+    {key:'payroll', view:'payroll', t:'Salary Disputes', s:'Payroll concerns and audits'},
+    {key:'coe', view:'coe', t:'COE Requests', s:'Certificates of Employment requests'},
+    {key:'offboarding', view:'offboarding', t:'Offboarding', s:'Resignation and exit tracking'}
+  ];
+  document.getElementById('home-quickaccess').innerHTML = items.map(i=>`
+    <div class="qa-item" onclick="goToView('${i.view}')">
+      <div class="qa-icon" style="background:${HOME_COLORS[i.key].bg};color:${HOME_COLORS[i.key].fg};">${HOME_ICONS[i.key]}</div>
+      <div class="qa-text"><div class="t">${i.t}</div><div class="s">${i.s}</div></div>
+      <svg class="qa-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`).join('');
+}
+
+function renderHomeDonut(){
+  const parts = [
+    {key:'applicants', name:'Applicants', n: DB.applicants.length, color: HOME_COLORS.applicants.fg},
+    {key:'incidents', name:'Incident Reports', n: DB.incidents.length, color: HOME_COLORS.incidents.fg},
+    {key:'payroll', name:'Salary Disputes', n: DB.payroll.length, color: HOME_COLORS.payroll.fg},
+    {key:'coe', name:'COE Requests', n: DB.coe.length, color: HOME_COLORS.coe.fg},
+    {key:'offboarding', name:'Offboarding', n: DB.offboarding.length, color: '#4f86f5'}
+  ];
+  const total = parts.reduce((s,p)=>s+p.n,0) || 1;
+  let acc = 0;
+  const stops = parts.map(p=>{
+    const start = (acc/total)*360;
+    acc += p.n;
+    const end = (acc/total)*360;
+    return `${p.color} ${start}deg ${end}deg`;
+  }).join(', ');
+
+  const legend = parts.map(p=>`
+    <div class="legend-row">
+      <span class="legend-dot" style="background:${p.color};"></span>
+      <span class="legend-name">${p.name}</span>
+      <span class="legend-val">${p.n} (${Math.round((p.n/total)*100)}%)</span>
+    </div>`).join('');
+
+  document.getElementById('home-donut').innerHTML = `
+    <div class="donut-wrap">
+      <div class="donut" style="background:conic-gradient(${stops});">
+        <div class="donut-hole"><div class="n">${total}</div><div class="l">Total Items</div></div>
+      </div>
+      <div class="legend">${legend}</div>
+    </div>`;
+}
+
+function renderHomeSchedule(){
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = DB.interviews.filter(i=>i.date>=today).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,3);
+  const el = document.getElementById('home-schedule');
+  if(!upcoming.length){ el.innerHTML = `<div class="empty">Nothing scheduled.</div>`; return; }
+  el.innerHTML = upcoming.map(i=>{
+    const d = i.date ? new Date(i.date+'T00:00:00') : null;
+    const mo = d ? d.toLocaleString('en-US',{month:'short'}).toUpperCase() : '—';
+    const day = d ? d.getDate() : '—';
+    return `<div class="sched-item">
+      <div class="sched-date"><div class="mo">${mo}</div><div class="day">${day}</div></div>
+      <div class="sched-text"><div class="t">Interview with ${escapeHtml(i.candidate)}</div><div class="s">${escapeHtml(i.position)||'—'}</div></div>
+      <div class="sched-time">${i.time||''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderHomeActivity(){
+  const rows = [];
+  DB.applicants.forEach(a=>rows.push({type:'Applicant', icon:'applicants', desc:`Application for ${a.position||'—'}`, status:a.status, date:a.dateApplied}));
+  DB.incidents.forEach(x=>rows.push({type:'Incident Report', icon:'incidents', desc:x.summary ? x.summary.slice(0,60) : `Reported by ${x.reportedBy}`, status:x.status, date:x.dateReported}));
+  DB.payroll.forEach(x=>rows.push({type:'Salary Dispute', icon:'payroll', desc:x.description ? x.description.slice(0,60) : `Reported by ${x.reportedBy}`, status:x.status, date:x.dateReported}));
+  DB.coe.forEach(x=>rows.push({type:'COE Request', icon:'coe', desc:x.purpose || `Request for ${escapeHtml(x.name)}`, status:x.status, date:x.dateReported}));
+  DB.offboarding.forEach(x=>rows.push({type:'Offboarding', icon:'offboarding', desc:`${escapeHtml(x.employeeName)} — ${x.status}`, status:x.finalPayStatus, date:x.date}));
+
+  rows.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
+  const top = rows.slice(0,6);
+  const tbody = document.getElementById('home-activity');
+  if(!top.length){ tbody.innerHTML = `<tr><td colspan="4"><div class="empty">No activity yet.</div></td></tr>`; return; }
+  tbody.innerHTML = top.map(r=>`
+    <tr>
+      <td><div class="activity-type">
+        <span class="activity-icon" style="background:${HOME_COLORS[r.icon].bg};color:${HOME_COLORS[r.icon].fg};">${HOME_ICONS[r.icon]}</span>
+        ${r.type}
+      </div></td>
+      <td class="clip">${escapeHtml(r.desc)||'—'}</td>
+      <td><span class="pill ${hrPillClass(r.status)}">${escapeHtml(r.status)||'—'}</span></td>
+      <td class="muted">${fmtDate(r.date)}</td>
+    </tr>`).join('');
+}
+
+function renderHome(){
+  const email = document.getElementById('current-user-email').textContent || '';
+  const firstName = email.split('@')[0].split('.')[0] || 'there';
+  document.getElementById('home-welcome').textContent = `Welcome back, ${firstName.charAt(0).toUpperCase()+firstName.slice(1)}! Here's your HR overview.`;
+  document.getElementById('home-avatar').textContent = (firstName[0]||'?').toUpperCase();
+  const unviewedTotal = unviewedCount(DB.applicants)+unviewedCount(DB.incidents)+unviewedCount(DB.payroll)+unviewedCount(DB.coe);
+  document.getElementById('home-bell-count').textContent = unviewedTotal;
+
+  renderHomeStats();
+  renderHomeQuickAccess();
+  renderHomeDonut();
+  renderHomeSchedule();
+  renderHomeActivity();
+}
+
+// ==========================================
 // DASHBOARD (applicant tracking overview)
 // ==========================================
 function renderDashboard(){
@@ -1629,6 +1865,7 @@ function renderDashboard(){
 
 function renderAll(){
   renderBadges();
+  renderHome();
   renderDashboard();
   renderApplicants();
   renderInterviews();
