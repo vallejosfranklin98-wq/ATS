@@ -1428,6 +1428,106 @@ function renderCoe(){
 }
 
 // ==========================================
+// OFFBOARDING
+// ==========================================
+function openOffboardingModal(id){
+  document.getElementById('off-delete-btn').style.display = id ? 'inline-block' : 'none';
+  if(id){
+    const x = DB.offboarding.find(r=>r.id===id);
+    document.getElementById('off-modal-title').textContent = `Offboarding — ${x.employeeName||x.employeeNo}`;
+    document.getElementById('off-edit-id').value = id;
+    document.getElementById('f-off-empno').value = x.employeeNo||'';
+    document.getElementById('f-off-name').value = x.employeeName||'';
+    document.getElementById('f-off-status').value = x.status||'Resigned';
+    document.getElementById('f-off-date').value = fmtDate(x.date)==='—' ? '' : fmtDate(x.date);
+    document.getElementById('f-off-resignation').checked = !!x.resignationLetter;
+    document.getElementById('f-off-clearance').checked = !!x.clearance;
+    document.getElementById('f-off-exitinterview').checked = !!x.exitInterview;
+    document.getElementById('f-off-eocdocs').checked = !!x.eocDocs;
+    document.getElementById('f-off-eocsent').value = fmtDate(x.dateEocSent)==='—' ? '' : fmtDate(x.dateEocSent);
+    document.getElementById('f-off-sentto').value = x.sentToWhom||'';
+    document.getElementById('f-off-finalpay').value = x.finalPayStatus||'Pending';
+  } else {
+    document.getElementById('off-modal-title').textContent = 'Add Offboarding Record';
+    ['off-edit-id','f-off-empno','f-off-name','f-off-eocsent','f-off-sentto'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f-off-status').value = 'Resigned';
+    document.getElementById('f-off-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-off-finalpay').value = 'Pending';
+    ['f-off-resignation','f-off-clearance','f-off-exitinterview','f-off-eocdocs'].forEach(f=>document.getElementById(f).checked=false);
+  }
+  document.getElementById('modal-offboarding').classList.add('open');
+}
+async function saveOffboarding(){
+  const editId = document.getElementById('off-edit-id').value;
+  const employeeName = document.getElementById('f-off-name').value.trim();
+  if(!employeeName){ alert('Employee Name is required.'); return; }
+  const payload = {
+    employee_no: document.getElementById('f-off-empno').value.trim(),
+    employee_name: employeeName,
+    status: document.getElementById('f-off-status').value,
+    date: document.getElementById('f-off-date').value || null,
+    resignation_letter: document.getElementById('f-off-resignation').checked,
+    clearance: document.getElementById('f-off-clearance').checked,
+    exit_interview: document.getElementById('f-off-exitinterview').checked,
+    eoc_docs: document.getElementById('f-off-eocdocs').checked,
+    date_eoc_sent: document.getElementById('f-off-eocsent').value || null,
+    sent_to_whom: document.getElementById('f-off-sentto').value.trim(),
+    final_pay_status: document.getElementById('f-off-finalpay').value
+  };
+  if(editId){
+    const { error } = await sb.from('offboarding').update(payload).eq('id', editId);
+    if(error){ alert('Save failed: '+error.message); return; }
+  } else {
+    const { error } = await sb.from('offboarding').insert(payload);
+    if(error){ alert('Save failed: '+error.message); return; }
+  }
+  closeModal('modal-offboarding');
+  await loadDB();
+  renderAll();
+}
+async function deleteOffboarding(){
+  const id = document.getElementById('off-edit-id').value;
+  if(!id || !confirm('Delete this offboarding record?')) return;
+  const { error } = await sb.from('offboarding').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  closeModal('modal-offboarding');
+  await loadDB();
+  renderAll();
+}
+function offCheckIcon(v){ return v ? '<span class="pill hired">✓</span>' : '<span class="pill withdrawn">—</span>'; }
+function renderOffboarding(){
+  const search = (document.getElementById('off-search')?.value||'').toLowerCase();
+  const fStatus = document.getElementById('off-filter-status')?.value||'';
+  const rows = DB.offboarding.filter(x=>{
+    const matchesSearch = !search || (x.employeeName||'').toLowerCase().includes(search) || (x.employeeNo||'').toLowerCase().includes(search);
+    const matchesStatus = !fStatus || x.status===fStatus;
+    return matchesSearch && matchesStatus;
+  });
+  const tbody = document.getElementById('offboarding-table');
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="12"><div class="empty"><div class="big">No offboarding records</div>Add a record to start tracking an employee's exit.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(x=>`
+    <tr>
+      <td class="id-mono">${escapeHtml(x.employeeNo)||'—'}</td>
+      <td>${escapeHtml(x.employeeName)}</td>
+      <td><span class="pill ${hrPillClass(x.status)}">${escapeHtml(x.status)}</span></td>
+      <td class="muted">${fmtDate(x.date)}</td>
+      <td>${offCheckIcon(x.resignationLetter)}</td>
+      <td>${offCheckIcon(x.clearance)}</td>
+      <td>${offCheckIcon(x.exitInterview)}</td>
+      <td>${offCheckIcon(x.eocDocs)}</td>
+      <td class="muted">${fmtDate(x.dateEocSent)}</td>
+      <td class="muted">${escapeHtml(x.sentToWhom)||'—'}</td>
+      <td><span class="pill ${hrPillClass(x.finalPayStatus)}">${escapeHtml(x.finalPayStatus)}</span></td>
+      <td><div class="actions">
+        <button class="iconbtn" onclick="openOffboardingModal('${x.id}')">edit</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+// ==========================================
 // SETTINGS
 // ==========================================
 function renderSettingsList(key, containerId){
