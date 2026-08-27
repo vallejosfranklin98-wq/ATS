@@ -553,7 +553,7 @@
           <thead><tr>
             <th>Employee No</th><th>Employee Name</th><th>Status</th><th>Date</th>
             <th>Resignation Letter</th><th>Clearance</th><th>Exit Interview</th><th>EOC Docs</th>
-            <th>EOC Docs Sent</th><th>Sent To Whom</th><th>Final Pay Status</th><th></th>
+            <th>EOC Docs Sent</th><th>Sent To Whom</th><th>Final Pay Status</th><th>Remarks</th><th></th>
           </tr></thead>
           <tbody id="offboarding-table"></tbody>
         </table>
@@ -805,6 +805,7 @@
         <option>Pending</option><option>Processing</option><option>Released</option><option>Withheld</option>
       </select>
     </div>
+    <div class="field"><label>Remarks</label><textarea id="f-off-remarks" rows="2" placeholder="Notes about this offboarding case…"></textarea></div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="deleteOffboarding()" id="off-delete-btn" style="display:none;color:var(--red);border-color:var(--red);">Delete</button>
       <button class="btn ghost" onclick="closeModal('modal-offboarding')">Cancel</button>
@@ -929,7 +930,7 @@ async function loadDB(){
   DB.offboarding = (offRes.data||[]).map(x=>({
     id:x.id, employeeNo:x.employee_no, employeeName:x.employee_name, status:x.status, date:x.date,
     resignationLetter:x.resignation_letter, clearance:x.clearance, exitInterview:x.exit_interview, eocDocs:x.eoc_docs,
-    dateEocSent:x.date_eoc_sent, sentToWhom:x.sent_to_whom, finalPayStatus:x.final_pay_status
+    dateEocSent:x.date_eoc_sent, sentToWhom:x.sent_to_whom, finalPayStatus:x.final_pay_status, remarks:x.remarks
   }));
 }
 function nextId(){
@@ -1529,9 +1530,10 @@ function openOffboardingModal(id){
     document.getElementById('f-off-eocsent').value = fmtDate(x.dateEocSent)==='—' ? '' : fmtDate(x.dateEocSent);
     document.getElementById('f-off-sentto').value = x.sentToWhom||'';
     document.getElementById('f-off-finalpay').value = x.finalPayStatus||'Pending';
+    document.getElementById('f-off-remarks').value = x.remarks||'';
   } else {
     document.getElementById('off-modal-title').textContent = 'Add Offboarding Record';
-    ['off-edit-id','f-off-empno','f-off-name','f-off-eocsent','f-off-sentto'].forEach(f=>document.getElementById(f).value='');
+    ['off-edit-id','f-off-empno','f-off-name','f-off-eocsent','f-off-sentto','f-off-remarks'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('f-off-status').value = 'Resigned';
     document.getElementById('f-off-date').value = new Date().toISOString().slice(0,10);
     document.getElementById('f-off-finalpay').value = 'Pending';
@@ -1554,7 +1556,8 @@ async function saveOffboarding(){
     eoc_docs: document.getElementById('f-off-eocdocs').checked,
     date_eoc_sent: document.getElementById('f-off-eocsent').value || null,
     sent_to_whom: document.getElementById('f-off-sentto').value.trim(),
-    final_pay_status: document.getElementById('f-off-finalpay').value
+    final_pay_status: document.getElementById('f-off-finalpay').value,
+    remarks: document.getElementById('f-off-remarks').value.trim()
   };
   if(editId){
     const { error } = await sb.from('offboarding').update(payload).eq('id', editId);
@@ -1587,7 +1590,7 @@ function renderOffboarding(){
   });
   const tbody = document.getElementById('offboarding-table');
   if(rows.length===0){
-    tbody.innerHTML = `<tr><td colspan="12"><div class="empty"><div class="big">No offboarding records</div>Add a record to start tracking an employee's exit.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty"><div class="big">No offboarding records</div>Add a record to start tracking an employee's exit.</div></td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(x=>`
@@ -1603,6 +1606,7 @@ function renderOffboarding(){
       <td class="muted">${fmtDate(x.dateEocSent)}</td>
       <td class="muted">${escapeHtml(x.sentToWhom)||'—'}</td>
       <td><span class="pill ${hrPillClass(x.finalPayStatus)}">${escapeHtml(x.finalPayStatus)}</span></td>
+      <td class="clip">${escapeHtml(x.remarks)||'—'}</td>
       <td><div class="actions">
         <button class="iconbtn" onclick="openOffboardingModal('${x.id}')">edit</button>
       </div></td>
