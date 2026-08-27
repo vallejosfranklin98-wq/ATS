@@ -229,6 +229,9 @@
       <button class="navbtn" data-view="employees"><span class="n"></span> Employees</button>
       <button class="navbtn" data-view="leave"><span class="n"></span> Leave Records</button>
 
+      <div class="navlabel">Offboarding</div>
+      <button class="navbtn" data-view="offboarding"><span class="n"></span> Offboarding</button>
+
       <div class="navlabel">Configure</div>
       <button class="navbtn" data-view="settings"><span class="n"></span> Settings</button>
     </nav>
@@ -501,6 +504,35 @@
       </div>
     </section>
 
+    <!-- OFFBOARDING -->
+    <section class="view" id="view-offboarding">
+      <div class="pagehead">
+        <div>
+          <h1>Offboarding</h1>
+          <p>Resignation, clearance, and exit tracking</p>
+        </div>
+        <button class="btn" onclick="openOffboardingModal()">+ Add Record</button>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="off-search" placeholder="Search employee no. or name…" oninput="renderOffboarding()">
+        <select id="off-filter-status" onchange="renderOffboarding()">
+          <option value="">All statuses</option>
+          <option>Resigned</option><option>Terminated</option><option>End of Contract</option>
+          <option>AWOL</option><option>Retired</option><option>Cleared</option>
+        </select>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr>
+            <th>Employee No</th><th>Employee Name</th><th>Status</th><th>Date</th>
+            <th>Resignation Letter</th><th>Clearance</th><th>Exit Interview</th><th>EOC Docs</th>
+            <th>EOC Docs Sent</th><th>Sent To Whom</th><th>Final Pay Status</th><th></th>
+          </tr></thead>
+          <tbody id="offboarding-table"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="view-settings">
       <div class="pagehead">
@@ -766,6 +798,52 @@
   </div>
 </div>
 
+<!-- OFFBOARDING MODAL -->
+<div class="overlay" id="modal-offboarding">
+  <div class="modal">
+    <h3 id="off-modal-title">Add Offboarding Record</h3>
+    <input type="hidden" id="off-edit-id">
+    <div class="field-row">
+      <div class="field"><label>Employee No</label><input id="f-off-empno"></div>
+      <div class="field"><label>Employee Name</label><input id="f-off-name"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Status</label>
+        <select id="f-off-status">
+          <option>Resigned</option><option>Terminated</option><option>End of Contract</option>
+          <option>AWOL</option><option>Retired</option><option>Cleared</option>
+        </select>
+      </div>
+      <div class="field"><label>Date</label><input type="date" id="f-off-date"></div>
+    </div>
+    <div class="field">
+      <label>Offboarding Documents</label>
+      <div class="field-row" style="gap:16px;">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" id="f-off-resignation"> Resignation Letter</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" id="f-off-clearance"> Clearance</label>
+      </div>
+      <div class="field-row" style="gap:16px;margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" id="f-off-exitinterview"> Exit Interview</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" id="f-off-eocdocs"> EOC Docs</label>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date When EOC Docs Were Sent</label><input type="date" id="f-off-eocsent"></div>
+      <div class="field"><label>Sent To Whom</label><input id="f-off-sentto"></div>
+    </div>
+    <div class="field"><label>Final Pay Status</label>
+      <select id="f-off-finalpay">
+        <option>Pending</option><option>Processing</option><option>Released</option><option>Withheld</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="deleteOffboarding()" id="off-delete-btn" style="display:none;color:var(--red);border-color:var(--red);">Delete</button>
+      <button class="btn ghost" onclick="closeModal('modal-offboarding')">Cancel</button>
+      <button class="btn" onclick="saveOffboarding()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---------- SUPABASE CONFIG ----------
 const SUPABASE_URL = 'https://byakcfrvrxhooighfbym.supabase.co';
@@ -777,6 +855,7 @@ let DB = {
   applicants: [], interviews: [], vacancies: [],
   incidents: [], payroll: [], coe: [],
   employees: [], leaveBalances: [], leaveTransactions: [],
+  offboarding: [],
   settings: { status: [], position: [], source: [], leave_type: [] }
 };
 
@@ -838,7 +917,7 @@ sb.auth.onAuthStateChange((event) => {
 // DATA LOADING
 // ==========================================
 async function loadDB(){
-  const [appsRes, intsRes, vacsRes, setsRes, incRes, prRes, coeRes, empRes, balRes, leaveRes] = await Promise.all([
+  const [appsRes, intsRes, vacsRes, setsRes, incRes, prRes, coeRes, empRes, balRes, leaveRes, offRes] = await Promise.all([
     sb.from('applicants').select('*').order('created_at',{ascending:false}),
     sb.from('interviews').select('*'),
     sb.from('vacancies').select('*').order('created_at',{ascending:false}),
@@ -848,9 +927,10 @@ async function loadDB(){
     sb.from('coe_requests').select('*').order('created_at',{ascending:false}),
     sb.from('employees').select('*').order('id',{ascending:true}),
     sb.from('leave_balances').select('*'),
-    sb.from('leave_transactions').select('*').order('date_filed',{ascending:false})
+    sb.from('leave_transactions').select('*').order('date_filed',{ascending:false}),
+    sb.from('offboarding').select('*').order('created_at',{ascending:false})
   ]);
-  [appsRes,intsRes,vacsRes,setsRes,incRes,prRes,coeRes,empRes,balRes,leaveRes].forEach(r=>{ if(r.error) console.error(r.error); });
+  [appsRes,intsRes,vacsRes,setsRes,incRes,prRes,coeRes,empRes,balRes,leaveRes,offRes].forEach(r=>{ if(r.error) console.error(r.error); });
 
   DB.applicants = (appsRes.data||[]).map(a=>({
     id:a.id, dateApplied:a.date_applied, name:a.name, position:a.position, source:a.source,
@@ -894,6 +974,11 @@ async function loadDB(){
   DB.coe = (coeRes.data||[]).map(x=>({
     id:x.id, dateReported:x.date_reported, name:x.name, department:x.department, email:x.email,
     purpose:x.purpose, status:x.status, remarks:x.remarks, isViewed:x.is_viewed
+  }));
+  DB.offboarding = (offRes.data||[]).map(x=>({
+    id:x.id, employeeNo:x.employee_no, employeeName:x.employee_name, status:x.status, date:x.date,
+    resignationLetter:x.resignation_letter, clearance:x.clearance, exitInterview:x.exit_interview, eocDocs:x.eoc_docs,
+    dateEocSent:x.date_eoc_sent, sentToWhom:x.sent_to_whom, finalPayStatus:x.final_pay_status
   }));
 }
 function nextId(){
@@ -1707,6 +1792,106 @@ async function saveBalances(){
 }
 
 // ==========================================
+// OFFBOARDING
+// ==========================================
+function openOffboardingModal(id){
+  document.getElementById('off-delete-btn').style.display = id ? 'inline-block' : 'none';
+  if(id){
+    const x = DB.offboarding.find(r=>r.id===id);
+    document.getElementById('off-modal-title').textContent = `Offboarding — ${x.employeeName||x.employeeNo}`;
+    document.getElementById('off-edit-id').value = id;
+    document.getElementById('f-off-empno').value = x.employeeNo||'';
+    document.getElementById('f-off-name').value = x.employeeName||'';
+    document.getElementById('f-off-status').value = x.status||'Resigned';
+    document.getElementById('f-off-date').value = fmtDate(x.date)==='—' ? '' : fmtDate(x.date);
+    document.getElementById('f-off-resignation').checked = !!x.resignationLetter;
+    document.getElementById('f-off-clearance').checked = !!x.clearance;
+    document.getElementById('f-off-exitinterview').checked = !!x.exitInterview;
+    document.getElementById('f-off-eocdocs').checked = !!x.eocDocs;
+    document.getElementById('f-off-eocsent').value = fmtDate(x.dateEocSent)==='—' ? '' : fmtDate(x.dateEocSent);
+    document.getElementById('f-off-sentto').value = x.sentToWhom||'';
+    document.getElementById('f-off-finalpay').value = x.finalPayStatus||'Pending';
+  } else {
+    document.getElementById('off-modal-title').textContent = 'Add Offboarding Record';
+    ['off-edit-id','f-off-empno','f-off-name','f-off-eocsent','f-off-sentto'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f-off-status').value = 'Resigned';
+    document.getElementById('f-off-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-off-finalpay').value = 'Pending';
+    ['f-off-resignation','f-off-clearance','f-off-exitinterview','f-off-eocdocs'].forEach(f=>document.getElementById(f).checked=false);
+  }
+  document.getElementById('modal-offboarding').classList.add('open');
+}
+async function saveOffboarding(){
+  const editId = document.getElementById('off-edit-id').value;
+  const employeeName = document.getElementById('f-off-name').value.trim();
+  if(!employeeName){ alert('Employee Name is required.'); return; }
+  const payload = {
+    employee_no: document.getElementById('f-off-empno').value.trim(),
+    employee_name: employeeName,
+    status: document.getElementById('f-off-status').value,
+    date: document.getElementById('f-off-date').value || null,
+    resignation_letter: document.getElementById('f-off-resignation').checked,
+    clearance: document.getElementById('f-off-clearance').checked,
+    exit_interview: document.getElementById('f-off-exitinterview').checked,
+    eoc_docs: document.getElementById('f-off-eocdocs').checked,
+    date_eoc_sent: document.getElementById('f-off-eocsent').value || null,
+    sent_to_whom: document.getElementById('f-off-sentto').value.trim(),
+    final_pay_status: document.getElementById('f-off-finalpay').value
+  };
+  if(editId){
+    const { error } = await sb.from('offboarding').update(payload).eq('id', editId);
+    if(error){ alert('Save failed: '+error.message); return; }
+  } else {
+    const { error } = await sb.from('offboarding').insert(payload);
+    if(error){ alert('Save failed: '+error.message); return; }
+  }
+  closeModal('modal-offboarding');
+  await loadDB();
+  renderAll();
+}
+async function deleteOffboarding(){
+  const id = document.getElementById('off-edit-id').value;
+  if(!id || !confirm('Delete this offboarding record?')) return;
+  const { error } = await sb.from('offboarding').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  closeModal('modal-offboarding');
+  await loadDB();
+  renderAll();
+}
+function offCheckIcon(v){ return v ? '<span class="pill hired">✓</span>' : '<span class="pill withdrawn">—</span>'; }
+function renderOffboarding(){
+  const search = (document.getElementById('off-search')?.value||'').toLowerCase();
+  const fStatus = document.getElementById('off-filter-status')?.value||'';
+  const rows = DB.offboarding.filter(x=>{
+    const matchesSearch = !search || (x.employeeName||'').toLowerCase().includes(search) || (x.employeeNo||'').toLowerCase().includes(search);
+    const matchesStatus = !fStatus || x.status===fStatus;
+    return matchesSearch && matchesStatus;
+  });
+  const tbody = document.getElementById('offboarding-table');
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="12"><div class="empty"><div class="big">No offboarding records</div>Add a record to start tracking an employee's exit.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(x=>`
+    <tr>
+      <td class="id-mono">${escapeHtml(x.employeeNo)||'—'}</td>
+      <td>${escapeHtml(x.employeeName)}</td>
+      <td><span class="pill ${hrPillClass(x.status)}">${escapeHtml(x.status)}</span></td>
+      <td class="muted">${fmtDate(x.date)}</td>
+      <td>${offCheckIcon(x.resignationLetter)}</td>
+      <td>${offCheckIcon(x.clearance)}</td>
+      <td>${offCheckIcon(x.exitInterview)}</td>
+      <td>${offCheckIcon(x.eocDocs)}</td>
+      <td class="muted">${fmtDate(x.dateEocSent)}</td>
+      <td class="muted">${escapeHtml(x.sentToWhom)||'—'}</td>
+      <td><span class="pill ${hrPillClass(x.finalPayStatus)}">${escapeHtml(x.finalPayStatus)}</span></td>
+      <td><div class="actions">
+        <button class="iconbtn" onclick="openOffboardingModal('${x.id}')">edit</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+// ==========================================
 // SETTINGS
 // ==========================================
 function renderSettingsList(key, containerId){
@@ -1817,6 +2002,7 @@ function renderAll(){
   renderCoe();
   renderEmployees();
   renderLeaveTransactions();
+  renderOffboarding();
   renderSettingsList('status','list-status');
   renderSettingsList('position','list-position');
   renderSettingsList('source','list-source');
