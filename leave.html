@@ -48,12 +48,12 @@
   <a class="back" href="index.html">← Back</a>
   <div class="mark">North Breeders Corp</div>
   <h1>Leave Management</h1>
-  <p class="sub">Check your remaining leave credits. Enter your Employee ID and your hire date to verify it's you.</p>
+  <p class="sub">Check your remaining leave credits. Enter your Employee ID and your full name to verify it's you.</p>
 
   <div class="card">
     <div class="row">
       <div><label for="empId">Employee ID</label><input id="empId" inputmode="numeric" placeholder="e.g. 2160001" autocomplete="off"></div>
-      <div><label for="hire">Hire date</label><input id="hire" type="date"></div>
+      <div><label for="fullName">Full name</label><input id="fullName" placeholder="e.g. Juan Dela Cruz" autocomplete="off"></div>
     </div>
     <button id="go" onclick="check()">Check my balance</button>
     <div class="err" id="err"></div>
@@ -83,14 +83,14 @@ const num = v => String(Math.round(Number(v) * 100) / 100);
 
 async function check(){
   const id = document.getElementById('empId').value.trim();
-  const hire = document.getElementById('hire').value;
+  const name = document.getElementById('fullName').value.trim();
   const err = document.getElementById('err'), btn = document.getElementById('go');
   err.style.display = 'none';
   document.getElementById('result').style.display = 'none';
-  if(!id || !hire){ err.textContent = 'Please enter your Employee ID and hire date.'; err.style.display = 'block'; return; }
+  if(!id || !name){ err.textContent = 'Please enter your Employee ID and full name.'; err.style.display = 'block'; return; }
   btn.disabled = true; btn.textContent = 'Checking…';
   try {
-    const { data, error } = await sb.rpc('get_leave_balance', { p_emp_id: id, p_hire_date: hire });
+    const { data, error } = await sb.rpc('get_leave_balance', { p_emp_id: id, p_name: name });
     if(error) throw error;
     if(data.status !== 'success'){ err.textContent = data.message; err.style.display = 'block'; return; }
     document.getElementById('r-name').textContent = data.name;
@@ -110,7 +110,7 @@ async function check(){
     btn.disabled = false; btn.textContent = 'Check my balance';
   }
 }
-document.getElementById('empId').addEventListener('keydown', e => { if(e.key === 'Enter') check(); });
+['empId','fullName'].forEach(i => document.getElementById(i).addEventListener('keydown', e => { if(e.key === 'Enter') check(); }));
 </script>
 </body>
 </html>
