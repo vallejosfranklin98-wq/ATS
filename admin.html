@@ -249,6 +249,55 @@
     .grid2{grid-template-columns:1fr;}
     main{padding:20px;}
   }
+
+  /* ===== LAYOUT FIXES + MOTION ===== */
+  .sidebar{position:sticky;top:0;height:100vh;align-self:start;overflow:hidden;gap:14px;}
+  .sidebar nav{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;}
+  .sidefoot{flex-shrink:0;}
+  .sidefoot .btn{width:100%;}
+  main{width:100%;min-width:0;max-width:1480px;margin:0 auto;}
+  #view-home .pagehead{align-items:center;}
+  .stat-row{grid-template-columns:repeat(6,1fr);}
+  .stat-card{cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s;}
+  .stat-card:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(28,37,54,.09);border-color:var(--blue-soft);}
+  .home-grid{align-items:stretch;}
+  .home-grid>.panel{margin-bottom:0;min-width:0;}
+  .home-grid .col{display:flex;flex-direction:column;gap:20px;min-width:0;}
+  .home-grid .col .panel{margin-bottom:0;}
+  .home-grid .col .panel:last-child{flex:1;display:flex;flex-direction:column;}
+  .home-grid .col .panel:last-child #home-schedule{flex:1;}
+  .qa-chev{transition:transform .15s;} .qa-item:hover .qa-chev{transform:translateX(3px);}
+  .qa-item{transition:background .12s,transform .15s;} .qa-item:hover{transform:translateX(2px);}
+  .dash-search{position:relative;cursor:text;}
+  .dash-search input{border:0;background:transparent;width:100%;padding:0;font-size:13px;}
+  .dash-search input:focus{outline:none;}
+  .dash-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,111,237,.12);}
+  .dash-bell{transition:transform .15s;} .dash-bell:hover{transform:scale(1.07);}
+  .dash-bell .dot.live{animation:pulse 1.8s infinite;}
+  .dd{position:absolute;top:calc(100% + 10px);right:0;width:340px;max-height:360px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px rgba(28,37,54,.14);padding:6px;z-index:60;display:none;cursor:default;text-align:left;}
+  .dd.open{display:block;animation:ddIn .16s ease-out;}
+  .dd-item{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink);}
+  .dd-item:hover,.dd-item.sel{background:var(--surface-alt);}
+  .dd-item .k{font-family:var(--font-mono);font-size:10px;color:var(--blue);text-transform:uppercase;font-weight:600;min-width:78px;}
+  .dd-item .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dd-item .tt small{display:block;color:var(--ink-dim);font-size:11px;overflow:hidden;text-overflow:ellipsis;}
+  .dd-item .c{font-family:var(--font-mono);font-weight:700;color:var(--red);}
+  .dd-empty{padding:14px;color:var(--ink-dim);font-size:12.5px;text-align:center;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  @keyframes ddIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  @keyframes donutIn{from{opacity:0;transform:rotate(-100deg) scale(.88);}to{opacity:1;transform:none;}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,74,60,.5);}50%{box-shadow:0 0 0 6px rgba(220,74,60,0);}}
+  .view.active{animation:fadeUp .28s ease-out;}
+  .stat-card,.home-grid>.panel,.home-grid .col>.panel{animation:fadeUp .45s ease-out both;}
+  .stat-card{animation-delay:calc(var(--i,0)*60ms);}
+  .home-grid>.panel:nth-child(1){animation-delay:.2s;} .home-grid .col>.panel:nth-child(1){animation-delay:.28s;} .home-grid .col>.panel:nth-child(2){animation-delay:.36s;} .home-grid>.panel:last-child{animation-delay:.32s;}
+  .donut{animation:donutIn .7s cubic-bezier(.2,.8,.2,1) both;}
+  #home-activity tr{animation:fadeUp .35s ease-out both;animation-delay:calc(.4s + var(--i,0)*50ms);}
+  .activity-type{white-space:nowrap;}
+  .home-grid>.panel{overflow-x:auto;}
+  @media (max-width:1400px){ .stat-row{grid-template-columns:repeat(3,1fr);} .home-grid{grid-template-columns:1fr 1fr;} .home-grid>.panel:last-child{grid-column:1/-1;} }
+  @media (max-width:1150px){ .stat-row{grid-template-columns:repeat(2,1fr);} .home-grid{grid-template-columns:1fr;} }
+  @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none!important;transition:none!important;} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -278,7 +327,7 @@
     </div>
     <nav>
       <div class="navlabel">Home</div>
-      <button class="navbtn active" data-view="home"><span class="n"></span> DASHBOARD</button>
+      <button class="navbtn active" data-view="home"><span class="n"></span> Dashboard</button>
 
       <div class="navlabel">Applicant Tracking</div>
       <button class="navbtn" data-view="dashboard"><span class="n"></span> Overview</button>
@@ -296,7 +345,7 @@
 
       <div class="navlabel">Leave</div>
       <button class="navbtn" data-view="leave-balances"><span class="n"></span> Leave Balances</button>
-      <button class="navbtn" data-view="leave-requests"><span class="n"></span> Leave Requests</button>
+      <button class="navbtn" data-view="leave-requests"><span class="n"></span> Leave Requests <span class="sidebar-badge" id="nb-leave" style="display:none;"></span></button>
 
       <div class="navlabel">Configure</div>
       <button class="navbtn" data-view="settings"><span class="n"></span> Settings</button>
@@ -317,13 +366,15 @@
           <p id="home-welcome">Welcome back! Here's your HR overview.</p>
         </div>
         <div class="dash-topbar">
-          <div class="dash-search">
+          <div class="dash-search" id="gs-box">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
-            Search anything…
+            <input id="gs-input" placeholder="Search anything…" autocomplete="off">
+            <div class="dd" id="gs-dd"></div>
           </div>
-          <div class="dash-bell">
+          <div class="dash-bell" id="home-bell" title="Notifications">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
             <span class="dot" id="home-bell-count">0</span>
+            <div class="dd" id="bell-dd"></div>
           </div>
           <div class="dash-avatar" id="home-avatar">–</div>
         </div>
@@ -341,11 +392,11 @@
         </div>
 
         <!-- SUMMARY + UPCOMING SCHEDULE -->
-        <div>
+        <div class="col">
           <div class="panel accent-purple">
             <div class="summary-head">
               <h2 style="margin:0;">Summary</h2>
-              <select class="summary-select"><option>This Week</option><option>This Month</option></select>
+              <select class="summary-select" id="home-range" onchange="renderHomeDonut()"><option value="all">All Time</option><option value="year">This Year</option><option value="month">This Month</option><option value="week">This Week</option></select>
             </div>
             <div id="home-donut"></div>
           </div>
@@ -360,7 +411,7 @@
         <div class="panel accent-green" style="margin-bottom:0;">
           <div class="activity-head-row">
             <h2 style="margin:0;">Recent Activity</h2>
-            <a href="#" class="activity-link" onclick="goToView('applicants');return false;">View all</a>
+            <a href="#" class="activity-link" onclick="goToView('incidents');return false;">View all</a>
           </div>
           <table>
             <thead><tr><th>Type</th><th>Description</th><th>Status</th><th>Date</th></tr></thead>
@@ -1784,8 +1835,18 @@ const HOME_COLORS = {
   incidents:{bg:'#efeafe', fg:'#7c5cf0'},
   payroll:{bg:'#fdf1da', fg:'#a5710f'},
   coe:{bg:'#e2f6ec', fg:'#18a35d'},
-  offboarding:{bg:'#efeafe', fg:'#7c5cf0'}
+  offboarding:{bg:'#efeafe', fg:'#7c5cf0'},
+  leave:{bg:'#dcf5f1', fg:'#0d9488'}
 };
+HOME_ICONS.leave = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+const HOME_VIEW = {applicants:'applicants',incidents:'incidents',payroll:'payroll',coe:'coe',offboarding:'offboarding',leave:'leave-requests'};
+function countUp(el){
+  const to = Number(el.dataset.count)||0;
+  const live = document.getElementById('view-home').classList.contains('active') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!to || !live){ el.textContent = to; return; }
+  const t0 = performance.now();
+  (function f(t){ const p = Math.min((t-t0)/700,1); el.textContent = Math.round(to*(1-Math.pow(1-p,3))); if(p<1) requestAnimationFrame(f); })(t0);
+}
 
 function daysAgo(dateStr, n){
   if(!dateStr) return false;
@@ -1805,17 +1866,19 @@ function renderHomeStats(){
     {key:'incidents', num: DB.incidents.length, lbl:'Incident Reports', sub:`+${pendingIncidents} pending`, subColor:'var(--purple)'},
     {key:'payroll', num: DB.payroll.length, lbl:'Salary Disputes', sub:`${resolvedPayroll} resolved`, subColor:'var(--gold)'},
     {key:'coe', num: DB.coe.length, lbl:'COE Requests', sub:`+${pendingCoe} pending`, subColor:'var(--green)'},
-    {key:'offboarding', num: DB.offboarding.length, lbl:'Offboarding', sub:'Pending', subColor:'var(--purple)'}
+    {key:'offboarding', num: DB.offboarding.length, lbl:'Offboarding', sub:'Pending', subColor:'var(--purple)'},
+    {key:'leave', num: DB.leaveRequests.length, lbl:'Leave Requests', sub:`+${DB.leaveRequests.filter(r=>r.status==='Pending').length} pending`, subColor:'#0d9488'}
   ];
-  document.getElementById('home-stats').innerHTML = cards.map(c=>`
-    <div class="stat-card">
+  document.getElementById('home-stats').innerHTML = cards.map((c,i)=>`
+    <div class="stat-card" style="--i:${i};" onclick="goToView('${HOME_VIEW[c.key]}')">
       <div class="stat-icon" style="background:${HOME_COLORS[c.key].bg};color:${HOME_COLORS[c.key].fg};">${HOME_ICONS[c.key]}</div>
       <div>
-        <div class="stat-num">${c.num}</div>
+        <div class="stat-num" data-count="${c.num}">${c.num}</div>
         <div class="stat-lbl">${c.lbl}</div>
         <div class="stat-sub" style="color:${c.subColor};">${c.sub}</div>
       </div>
     </div>`).join('');
+  document.querySelectorAll('#home-stats .stat-num').forEach(countUp);
 }
 
 function renderHomeQuickAccess(){
@@ -1824,7 +1887,8 @@ function renderHomeQuickAccess(){
     {key:'incidents', view:'incidents', t:'Incident Reports', s:'Employee-submitted incidents'},
     {key:'payroll', view:'payroll', t:'Salary Disputes', s:'Payroll concerns and audits'},
     {key:'coe', view:'coe', t:'COE Requests', s:'Certificates of Employment requests'},
-    {key:'offboarding', view:'offboarding', t:'Offboarding', s:'Resignation and exit tracking'}
+    {key:'offboarding', view:'offboarding', t:'Offboarding', s:'Resignation and exit tracking'},
+    {key:'leave', view:'leave-balances', t:'Leave Management', s:'Balances, credits, and requests'}
   ];
   document.getElementById('home-quickaccess').innerHTML = items.map(i=>`
     <div class="qa-item" onclick="goToView('${i.view}')">
@@ -1835,14 +1899,19 @@ function renderHomeQuickAccess(){
 }
 
 function renderHomeDonut(){
+  const range = document.getElementById('home-range')?.value || 'all';
+  const days = {week:7, month:30, year:365}[range];
+  const cnt = (list, f) => list.filter(x => !days || daysAgo(f(x), days)).length;
   const parts = [
-    {key:'applicants', name:'Applicants', n: DB.applicants.length, color: HOME_COLORS.applicants.fg},
-    {key:'incidents', name:'Incident Reports', n: DB.incidents.length, color: HOME_COLORS.incidents.fg},
-    {key:'payroll', name:'Salary Disputes', n: DB.payroll.length, color: HOME_COLORS.payroll.fg},
-    {key:'coe', name:'COE Requests', n: DB.coe.length, color: HOME_COLORS.coe.fg},
-    {key:'offboarding', name:'Offboarding', n: DB.offboarding.length, color: '#4f86f5'}
+    {key:'applicants', name:'Applicants', n: cnt(DB.applicants,x=>x.dateApplied), color: HOME_COLORS.applicants.fg},
+    {key:'incidents', name:'Incident Reports', n: cnt(DB.incidents,x=>x.dateReported), color: HOME_COLORS.incidents.fg},
+    {key:'payroll', name:'Salary Disputes', n: cnt(DB.payroll,x=>x.dateReported), color: HOME_COLORS.payroll.fg},
+    {key:'coe', name:'COE Requests', n: cnt(DB.coe,x=>x.dateReported), color: HOME_COLORS.coe.fg},
+    {key:'offboarding', name:'Offboarding', n: cnt(DB.offboarding,x=>x.date), color: '#4f86f5'},
+    {key:'leave', name:'Leave Requests', n: cnt(DB.leaveRequests,x=>x.filed), color: HOME_COLORS.leave.fg}
   ];
-  const total = parts.reduce((s,p)=>s+p.n,0) || 1;
+  const rawTotal = parts.reduce((s,p)=>s+p.n,0);
+  const total = rawTotal || 1;
   let acc = 0;
   const stops = parts.map(p=>{
     const start = (acc/total)*360;
@@ -1861,7 +1930,7 @@ function renderHomeDonut(){
   document.getElementById('home-donut').innerHTML = `
     <div class="donut-wrap">
       <div class="donut" style="background:conic-gradient(${stops});">
-        <div class="donut-hole"><div class="n">${total}</div><div class="l">Total Items</div></div>
+        <div class="donut-hole"><div class="n" data-count="${rawTotal}">${rawTotal}</div><div class="l">Total Items</div></div>
       </div>
       <div class="legend">${legend}</div>
     </div>`;
@@ -1892,29 +1961,88 @@ function renderHomeActivity(){
   DB.coe.forEach(x=>rows.push({type:'COE Request', icon:'coe', desc:x.purpose || `Request for ${escapeHtml(x.name)}`, status:x.status, date:x.dateReported}));
   DB.offboarding.forEach(x=>rows.push({type:'Offboarding', icon:'offboarding', desc:`${escapeHtml(x.employeeName)} — ${x.status}`, status:x.finalPayStatus, date:x.date}));
 
+  DB.leaveRequests.forEach(x=>rows.push({type:'Leave Request', icon:'leave', pill:lvPill(x.status), desc:`${x.empName||x.empId} — ${x.type} (${x.withPay+x.withoutPay} day)`, status:x.status, date:x.filed}));
   rows.sort((a,b)=> new Date(b.date||0) - new Date(a.date||0));
   const top = rows.slice(0,6);
   const tbody = document.getElementById('home-activity');
   if(!top.length){ tbody.innerHTML = `<tr><td colspan="4"><div class="empty">No activity yet.</div></td></tr>`; return; }
-  tbody.innerHTML = top.map(r=>`
-    <tr>
+  tbody.innerHTML = top.map((r,i)=>`
+    <tr style="--i:${i};">
       <td><div class="activity-type">
         <span class="activity-icon" style="background:${HOME_COLORS[r.icon].bg};color:${HOME_COLORS[r.icon].fg};">${HOME_ICONS[r.icon]}</span>
         ${r.type}
       </div></td>
       <td class="clip">${escapeHtml(r.desc)||'—'}</td>
-      <td><span class="pill ${hrPillClass(r.status)}">${escapeHtml(r.status)||'—'}</span></td>
+      <td><span class="pill ${r.pill||hrPillClass(r.status)}">${escapeHtml(r.status)||'—'}</span></td>
       <td class="muted">${fmtDate(r.date)}</td>
     </tr>`).join('');
 }
+
+// ---------- TOP BAR: SEARCH + NOTIFICATIONS ----------
+function closeDropdowns(){ document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open')); }
+function globalSearchItems(q){
+  const L = [], add = (kind,view,title,sub)=>L.push({kind,view,title:title||'—',sub:sub||''});
+  const m = (...f)=>f.some(v=>(v??'').toString().toLowerCase().includes(q));
+  DB.applicants.forEach(a=>m(a.name,a.position,a.id,a.email)&&add('Applicant','applicants',a.name,a.position));
+  DB.interviews.forEach(i=>m(i.candidate,i.position)&&add('Interview','interviews',i.candidate,i.position));
+  DB.vacancies.forEach(v=>m(v.position,v.mrf,v.department)&&add('Vacancy','vacancies',v.position,v.department));
+  DB.incidents.forEach(x=>m(x.id,x.reportedBy,x.employeeInvolved,x.summary)&&add('Incident','incidents',x.employeeInvolved||x.reportedBy,(x.summary||'').slice(0,60)));
+  DB.payroll.forEach(x=>m(x.id,x.reportedBy,x.description)&&add('Salary','payroll',x.reportedBy,(x.description||'').slice(0,60)));
+  DB.coe.forEach(x=>m(x.id,x.name,x.purpose)&&add('COE','coe',x.name,x.purpose));
+  DB.offboarding.forEach(x=>m(x.employeeNo,x.employeeName)&&add('Offboarding','offboarding',x.employeeName,x.employeeNo));
+  DB.leaveEmployees.forEach(e=>m(e.id,e.name)&&add('Leave','leave-balances',e.name,e.id+' · '+(e.department||'')));
+  return L;
+}
+function renderGlobalSearch(){
+  const q = document.getElementById('gs-input').value.trim().toLowerCase();
+  const dd = document.getElementById('gs-dd');
+  if(!q){ dd.classList.remove('open'); return; }
+  const all = globalSearchItems(q), hits = all.slice(0,8);
+  dd.innerHTML = hits.length
+    ? hits.map((h,i)=>`<div class="dd-item${i===0?' sel':''}" data-view="${h.view}"><span class="k">${h.kind}</span><span class="tt">${escapeHtml(h.title)}<small>${escapeHtml(h.sub)}</small></span></div>`).join('')
+      + (all.length>8 ? `<div class="dd-empty">+${all.length-8} more — refine your search</div>` : '')
+    : '<div class="dd-empty">No results found.</div>';
+  dd.classList.add('open');
+}
+function renderBellMenu(){
+  const dd = document.getElementById('bell-dd');
+  const items = [
+    ['New applicants','applicants',unviewedCount(DB.applicants)],
+    ['New incident reports','incidents',unviewedCount(DB.incidents)],
+    ['New salary disputes','payroll',unviewedCount(DB.payroll)],
+    ['New COE requests','coe',unviewedCount(DB.coe)],
+    ['Leave requests awaiting approval','leave-requests',DB.leaveRequests.filter(r=>r.status==='Pending').length]
+  ].filter(i=>i[2]>0);
+  dd.innerHTML = items.length
+    ? items.map(i=>`<div class="dd-item" data-view="${i[1]}"><span class="tt">${i[0]}</span><span class="c">${i[2]}</span></div>`).join('')
+    : '<div class="dd-empty">You\'re all caught up.</div>';
+}
+(function initTopbar(){
+  const gi = document.getElementById('gs-input'), gd = document.getElementById('gs-dd'), bell = document.getElementById('home-bell'), bd = document.getElementById('bell-dd');
+  const open = e=>{ const it = e.target.closest('.dd-item'); if(!it) return; e.stopPropagation(); closeDropdowns(); gi.value=''; goToView(it.dataset.view); };
+  gd.addEventListener('click', open); bd.addEventListener('click', open);
+  gi.addEventListener('input', renderGlobalSearch);
+  gi.addEventListener('focus', renderGlobalSearch);
+  gi.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ closeDropdowns(); gi.blur(); }
+    if(e.key==='Enter'){ const f = gd.querySelector('.dd-item'); if(f) f.click(); }
+  });
+  bell.addEventListener('click', e=>{ if(e.target.closest('.dd')) return; const was = bd.classList.contains('open'); closeDropdowns(); if(!was){ renderBellMenu(); bd.classList.add('open'); } });
+  document.addEventListener('click', e=>{ if(!e.target.closest('#gs-box') && !e.target.closest('#home-bell')) closeDropdowns(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.getElementById('view-home').classList.contains('active')){ e.preventDefault(); gi.focus(); } });
+})();
 
 function renderHome(){
   const email = document.getElementById('current-user-email').textContent || '';
   const firstName = email.split('@')[0].split('.')[0] || 'there';
   document.getElementById('home-welcome').textContent = `Welcome back, ${firstName.charAt(0).toUpperCase()+firstName.slice(1)}! Here's your HR overview.`;
   document.getElementById('home-avatar').textContent = (firstName[0]||'?').toUpperCase();
-  const unviewedTotal = unviewedCount(DB.applicants)+unviewedCount(DB.incidents)+unviewedCount(DB.payroll)+unviewedCount(DB.coe);
-  document.getElementById('home-bell-count').textContent = unviewedTotal;
+  const pendingLeave = DB.leaveRequests.filter(r=>r.status==='Pending').length;
+  const unviewedTotal = unviewedCount(DB.applicants)+unviewedCount(DB.incidents)+unviewedCount(DB.payroll)+unviewedCount(DB.coe)+pendingLeave;
+  const dot = document.getElementById('home-bell-count');
+  dot.textContent = unviewedTotal; dot.style.display = unviewedTotal ? '' : 'none'; dot.classList.toggle('live', unviewedTotal>0);
+  const nbl = document.getElementById('nb-leave');
+  if(nbl){ nbl.textContent = pendingLeave; nbl.style.display = pendingLeave ? '' : 'none'; }
 
   renderHomeStats();
   renderHomeQuickAccess();
