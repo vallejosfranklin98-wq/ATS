@@ -294,6 +294,10 @@
       <div class="navlabel">Offboarding</div>
       <button class="navbtn" data-view="offboarding"><span class="n"></span> Offboarding</button>
 
+      <div class="navlabel">Leave</div>
+      <button class="navbtn" data-view="leave-balances"><span class="n"></span> Leave Balances</button>
+      <button class="navbtn" data-view="leave-requests"><span class="n"></span> Leave Requests</button>
+
       <div class="navlabel">Configure</div>
       <button class="navbtn" data-view="settings"><span class="n"></span> Settings</button>
     </nav>
@@ -560,6 +564,42 @@
       </div>
     </section>
 
+    <!-- LEAVE -->
+    <section class="view" id="view-leave-balances">
+      <div class="pagehead">
+        <div><h1>Leave Balances</h1><p>Remaining credits per employee (credits minus approved with-pay days)</p></div>
+        <button class="btn" onclick="openLeaveModal()">+ File Leave</button>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="lb-search" placeholder="Search employee ID or name…" oninput="renderLeaveBalances()">
+        <select id="lb-dept" onchange="renderLeaveBalances()"><option value="">All departments</option></select>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr><th>Emp ID</th><th>Employee</th><th>Department</th><th>Vacation</th><th>Sick</th><th>Birthday</th><th></th></tr></thead>
+          <tbody id="lb-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-leave-requests">
+      <div class="pagehead">
+        <div><h1>Leave Requests</h1><p>Approve, reject, or edit leave filings</p></div>
+        <button class="btn" onclick="openLeaveModal()">+ File Leave</button>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="lr-search" placeholder="Search employee ID, name, or reason…" oninput="renderLeaveRequests()">
+        <select id="lr-status" onchange="renderLeaveRequests()"><option value="">All statuses</option><option>Pending</option><option>Approved</option><option>Rejected</option><option>Cancelled</option></select>
+        <select id="lr-type" onchange="renderLeaveRequests()"><option value="">All types</option></select>
+      </div>
+      <div class="panel" style="padding:0;overflow:auto;">
+        <table>
+          <thead><tr><th>ID</th><th>Employee</th><th>Type</th><th>Filed</th><th>From</th><th>To</th><th>With Pay</th><th>W/o Pay</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+          <tbody id="lr-table"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="view-settings">
       <div class="pagehead">
@@ -768,6 +808,37 @@
 </div>
 
 <!-- OFFBOARDING MODAL -->
+<div class="overlay" id="modal-leave">
+  <div class="modal">
+    <h3 id="lv-modal-title">File Leave</h3>
+    <input type="hidden" id="lv-edit-id">
+    <div class="field-row">
+      <div class="field"><label>Employee (ID — Name)</label><input id="f-lv-emp" list="lv-emp-list" oninput="leaveRecalc()" autocomplete="off"><datalist id="lv-emp-list"></datalist></div>
+      <div class="field"><label>Leave Type</label><select id="f-lv-type" onchange="leaveRecalc()"></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date Filed</label><input type="date" id="f-lv-filed"></div>
+      <div class="field"><label>From</label><input type="date" id="f-lv-from" onchange="leaveRecalc()"></div>
+      <div class="field"><label>To</label><input type="date" id="f-lv-to" onchange="leaveRecalc()"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>With Pay (days)</label><input type="number" step="0.5" min="0" id="f-lv-with"></div>
+      <div class="field"><label>Without Pay (days)</label><input type="number" step="0.5" min="0" id="f-lv-wout"></div>
+    </div>
+    <div class="muted" id="lv-hint" style="font-size:12px;margin:-4px 0 10px;"></div>
+    <div class="field"><label>Reason</label><textarea id="f-lv-reason" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Status</label><select id="f-lv-status"><option>Pending</option><option>Approved</option><option>Rejected</option><option>Cancelled</option></select></div>
+      <div class="field"><label>Reject Reason</label><input id="f-lv-rej"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="deleteLeave()" id="lv-delete-btn" style="display:none;color:var(--red);border-color:var(--red);">Delete</button>
+      <button class="btn ghost" onclick="closeModal('modal-leave')">Cancel</button>
+      <button class="btn" onclick="saveLeave()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="modal-offboarding">
   <div class="modal">
     <h3 id="off-modal-title">Add Offboarding Record</h3>
@@ -825,6 +896,8 @@ let DB = {
   applicants: [], interviews: [], vacancies: [],
   incidents: [], payroll: [], coe: [],
   offboarding: [],
+  leaveEmployees: [],
+  leaveRequests: [],
   settings: { status: [], position: [], source: [], leave_type: [] }
 };
 
@@ -931,6 +1004,21 @@ async function loadDB(){
     id:x.id, employeeNo:x.employee_no, employeeName:x.employee_name, status:x.status, date:x.date,
     resignationLetter:x.resignation_letter, clearance:x.clearance, exitInterview:x.exit_interview, eocDocs:x.eoc_docs,
     dateEocSent:x.date_eoc_sent, sentToWhom:x.sent_to_whom, finalPayStatus:x.final_pay_status, remarks:x.remarks
+  }));
+  const [leRes, lrRes] = await Promise.all([
+    sb.from('leave_employees').select('*').order('full_name'),
+    sb.from('leave_requests').select('*').order('date_filed',{ascending:false})
+  ]);
+  if(leRes.error) console.error(leRes.error);
+  if(lrRes.error) console.error(lrRes.error);
+  DB.leaveEmployees = (leRes.data||[]).map(e=>({
+    id:e.emp_id, name:e.full_name, department:e.department, active:e.is_active,
+    credit:{ Vacation:Number(e.vacation_credit||0), Sick:Number(e.sick_credit||0), Birthday:Number(e.birthday_credit||0) }
+  }));
+  DB.leaveRequests = (lrRes.data||[]).map(x=>({
+    id:x.id, empId:x.emp_id, empName:x.emp_name, type:x.leave_type, filed:x.date_filed, from:x.date_from, to:x.date_to,
+    withPay:Number(x.with_pay||0), withoutPay:Number(x.without_pay||0), reason:x.reason, status:x.status,
+    rejectReason:x.reject_reason, dateApproved:x.date_approved, dateRejected:x.date_rejected
   }));
 }
 function nextId(){
@@ -1867,6 +1955,153 @@ function renderDashboard(){
     : `<tr><td colspan="5"><div class="empty">No applicants yet.</div></td></tr>`;
 }
 
+// ==========================================
+// LEAVE MANAGEMENT
+// ==========================================
+function leaveTypes(){ return DB.settings.leave_type.length ? DB.settings.leave_type : ['Vacation','Sick','Birthday','Bereavement','New Leave Type']; }
+function lvBalance(empId, type, excludeId){
+  const e = DB.leaveEmployees.find(x=>x.id===empId);
+  if(!e || !(type in e.credit)) return null;
+  const used = DB.leaveRequests.filter(r=>r.empId===empId && r.type===type && r.status==='Approved' && r.id!==excludeId)
+                               .reduce((s,r)=>s+r.withPay,0);
+  return Math.round((e.credit[type]-used)*100)/100;
+}
+function lvNum(v){ return v===null ? '—' : String(Math.round(v*100)/100); }
+function lvPill(s){ return s==='Approved'?'hired' : s==='Pending'?'onhold' : 'withdrawn'; }
+function renderLeaveBalances(){
+  const search = (document.getElementById('lb-search')?.value||'').toLowerCase();
+  const depSel = document.getElementById('lb-dept');
+  const depts = [...new Set(DB.leaveEmployees.map(e=>e.department).filter(Boolean))].sort();
+  if(depSel && depSel.options.length-1 !== depts.length){
+    const cur = depSel.value;
+    depSel.innerHTML = '<option value="">All departments</option>' + depts.map(d=>`<option>${escapeHtml(d)}</option>`).join('');
+    depSel.value = cur;
+  }
+  const fd = depSel?.value||'';
+  const rows = DB.leaveEmployees.filter(e=>e.active!==false && (!fd || e.department===fd) &&
+    (!search || (e.name||'').toLowerCase().includes(search) || e.id.toLowerCase().includes(search)));
+  const tb = document.getElementById('lb-table');
+  if(!tb) return;
+  if(!rows.length){ tb.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="big">No employees found</div>Run leave.sql in Supabase to load the roster.</div></td></tr>'; return; }
+  const cell = (e,t)=>{ const b=lvBalance(e.id,t); return `<td><span class="pill ${b<=0?'withdrawn':'hired'}">${lvNum(b)}</span> <span class="muted">/ ${lvNum(e.credit[t])}</span></td>`; };
+  tb.innerHTML = rows.map(e=>`<tr>
+    <td class="id-mono">${escapeHtml(e.id)}</td><td>${escapeHtml(e.name)}</td><td class="muted">${escapeHtml(e.department)||'—'}</td>
+    ${cell(e,'Vacation')}${cell(e,'Sick')}${cell(e,'Birthday')}
+    <td><div class="actions"><button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button></div></td></tr>`).join('');
+}
+function renderLeaveRequests(){
+  const search = (document.getElementById('lr-search')?.value||'').toLowerCase();
+  const fs = document.getElementById('lr-status')?.value||'';
+  const ft = document.getElementById('lr-type');
+  if(ft && ft.options.length-1 !== leaveTypes().length){
+    const cur = ft.value;
+    ft.innerHTML = '<option value="">All types</option>' + leaveTypes().map(t=>`<option>${escapeHtml(t)}</option>`).join('');
+    ft.value = cur;
+  }
+  const ftv = ft?.value||'';
+  const rows = DB.leaveRequests.filter(r=>(!fs||r.status===fs) && (!ftv||r.type===ftv) &&
+    (!search || (r.empName||'').toLowerCase().includes(search) || r.empId.toLowerCase().includes(search) || (r.reason||'').toLowerCase().includes(search)));
+  const tb = document.getElementById('lr-table');
+  if(!tb) return;
+  if(!rows.length){ tb.innerHTML = '<tr><td colspan="11"><div class="empty"><div class="big">No leave requests</div>Click “+ File Leave” to add one.</div></td></tr>'; return; }
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td class="id-mono">${escapeHtml(r.id)}</td><td>${escapeHtml(r.empName)}<div class="muted" style="font-size:11px;">${escapeHtml(r.empId)}</div></td>
+    <td>${escapeHtml(r.type)}</td><td class="muted">${fmtDate(r.filed)}</td><td class="muted">${fmtDate(r.from)}</td><td class="muted">${fmtDate(r.to)}</td>
+    <td>${r.withPay}</td><td>${r.withoutPay}</td><td class="clip">${escapeHtml(r.reason)||'—'}</td>
+    <td><span class="pill ${lvPill(r.status)}">${escapeHtml(r.status)}</span></td>
+    <td><div class="actions">${r.status==='Pending'?`<button class="iconbtn" onclick="quickLeave('${r.id}','Approved')">approve</button><button class="iconbtn" onclick="quickLeave('${r.id}','Rejected')">reject</button>`:''}
+      <button class="iconbtn" onclick="openLeaveModal('${r.id}')">edit</button></div></td></tr>`).join('');
+}
+async function quickLeave(id, status){
+  const today = new Date().toISOString().slice(0,10);
+  let rej = null;
+  if(status==='Rejected'){ rej = prompt('Reason for rejection (optional):'); if(rej===null) return; }
+  const payload = status==='Approved' ? { status, date_approved:today } : { status, reject_reason:rej||null, date_rejected:today };
+  const { error } = await sb.from('leave_requests').update(payload).eq('id', id);
+  if(error){ alert('Update failed: '+error.message); return; }
+  await loadDB(); renderAll();
+}
+function lvParseEmp(){
+  const v = document.getElementById('f-lv-emp').value.trim();
+  const id = v.split('—')[0].trim();
+  return DB.leaveEmployees.find(e=>e.id===id) || null;
+}
+function leaveRecalc(){
+  const editId = document.getElementById('lv-edit-id').value;
+  const e = lvParseEmp(), type = document.getElementById('f-lv-type').value;
+  const f = document.getElementById('f-lv-from').value, t = document.getElementById('f-lv-to').value;
+  const hint = document.getElementById('lv-hint');
+  if(!e){ hint.textContent=''; return; }
+  const bal = lvBalance(e.id, type, editId||null);
+  hint.textContent = bal===null ? `${type} has no credit balance — filed as without pay.` : `Available ${type} balance: ${lvNum(bal)} day(s).`;
+  if(editId || !f) return;
+  const days = Math.max(1, Math.round((new Date(t||f) - new Date(f))/86400000) + 1);
+  const wp = bal===null ? 0 : Math.min(days, Math.max(bal,0));
+  document.getElementById('f-lv-with').value = wp;
+  document.getElementById('f-lv-wout').value = days - wp;
+}
+function openLeaveModal(id, empId){
+  document.getElementById('lv-emp-list').innerHTML = DB.leaveEmployees.filter(e=>e.active!==false).map(e=>`<option value="${escapeHtml(e.id)} — ${escapeHtml(e.name)}">`).join('');
+  fillSelect(document.getElementById('f-lv-type'), leaveTypes(), 'Vacation');
+  const set = (k,v)=>document.getElementById(k).value = v ?? '';
+  const dv = v => fmtDate(v)==='—' ? '' : fmtDate(v);
+  if(id){
+    const r = DB.leaveRequests.find(x=>x.id===id);
+    document.getElementById('lv-modal-title').textContent = `Leave — ${r.empName||r.empId}`;
+    set('lv-edit-id',id); set('f-lv-emp', `${r.empId} — ${r.empName||''}`);
+    document.getElementById('f-lv-type').value = r.type;
+    set('f-lv-filed',dv(r.filed)); set('f-lv-from',dv(r.from)); set('f-lv-to',dv(r.to));
+    set('f-lv-with',r.withPay); set('f-lv-wout',r.withoutPay); set('f-lv-reason',r.reason);
+    set('f-lv-status',r.status); set('f-lv-rej',r.rejectReason);
+    document.getElementById('lv-delete-btn').style.display = '';
+  } else {
+    document.getElementById('lv-modal-title').textContent = 'File Leave';
+    ['lv-edit-id','f-lv-from','f-lv-to','f-lv-with','f-lv-wout','f-lv-reason','f-lv-rej'].forEach(k=>set(k,''));
+    const e = empId ? DB.leaveEmployees.find(x=>x.id===empId) : null;
+    set('f-lv-emp', e ? `${e.id} — ${e.name}` : '');
+    set('f-lv-filed', new Date().toISOString().slice(0,10)); set('f-lv-status','Pending');
+    document.getElementById('lv-delete-btn').style.display = 'none';
+  }
+  document.getElementById('lv-hint').textContent = '';
+  document.getElementById('modal-leave').classList.add('open');
+  leaveRecalc();
+}
+async function saveLeave(){
+  const editId = document.getElementById('lv-edit-id').value;
+  const e = lvParseEmp();
+  const from = document.getElementById('f-lv-from').value;
+  if(!e){ alert('Pick an employee from the list.'); return; }
+  if(!from){ alert('Start date is required.'); return; }
+  const status = document.getElementById('f-lv-status').value;
+  const today = new Date().toISOString().slice(0,10);
+  const old = editId ? DB.leaveRequests.find(x=>x.id===editId) : null;
+  const payload = {
+    emp_id:e.id, emp_name:e.name, leave_type:document.getElementById('f-lv-type').value,
+    date_filed:document.getElementById('f-lv-filed').value||null, date_from:from,
+    date_to:document.getElementById('f-lv-to').value||from,
+    with_pay:Number(document.getElementById('f-lv-with').value||0), without_pay:Number(document.getElementById('f-lv-wout').value||0),
+    reason:document.getElementById('f-lv-reason').value.trim(), status,
+    reject_reason:document.getElementById('f-lv-rej').value.trim()||null,
+    date_approved: status==='Approved' ? (fmtDate(old?.dateApproved)!=='—' ? old.dateApproved : today) : null,
+    date_rejected: status==='Rejected' ? (fmtDate(old?.dateRejected)!=='—' ? old.dateRejected : today) : null
+  };
+  let error;
+  if(editId){ ({ error } = await sb.from('leave_requests').update(payload).eq('id', editId)); }
+  else {
+    const max = DB.leaveRequests.reduce((m,r)=>Math.max(m, parseInt((r.id||'').replace(/\D/g,''))||0), 0);
+    ({ error } = await sb.from('leave_requests').insert({ id:'LV-'+String(max+1).padStart(4,'0'), ...payload }));
+  }
+  if(error){ alert('Save failed: '+error.message); return; }
+  closeModal('modal-leave'); await loadDB(); renderAll();
+}
+async function deleteLeave(){
+  const id = document.getElementById('lv-edit-id').value;
+  if(!id || !confirm('Delete this leave request?')) return;
+  const { error } = await sb.from('leave_requests').delete().eq('id', id);
+  if(error){ alert('Delete failed: '+error.message); return; }
+  closeModal('modal-leave'); await loadDB(); renderAll();
+}
+
 function renderAll(){
   renderBadges();
   renderHome();
@@ -1878,6 +2113,8 @@ function renderAll(){
   renderPayroll();
   renderCoe();
   renderOffboarding();
+  renderLeaveBalances();
+  renderLeaveRequests();
   renderSettingsList('status','list-status');
   renderSettingsList('position','list-position');
   renderSettingsList('source','list-source');
