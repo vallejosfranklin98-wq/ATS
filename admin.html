@@ -808,6 +808,23 @@
 </div>
 
 <!-- OFFBOARDING MODAL -->
+<div class="overlay" id="modal-credits">
+  <div class="modal">
+    <h3 id="cr-title">Edit Leave Credits</h3>
+    <input type="hidden" id="cr-emp">
+    <div class="field-row">
+      <div class="field"><label>Vacation credit</label><input type="number" step="0.01" min="0" id="f-cr-Vacation"></div>
+      <div class="field"><label>Sick credit</label><input type="number" step="0.01" min="0" id="f-cr-Sick"></div>
+      <div class="field"><label>Birthday credit</label><input type="number" step="0.01" min="0" id="f-cr-Birthday"></div>
+    </div>
+    <div class="muted" id="cr-hint" style="font-size:12px;margin:-4px 0 10px;"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-credits')">Cancel</button>
+      <button class="btn" onclick="saveCredits()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="modal-leave">
   <div class="modal">
     <h3 id="lv-modal-title">File Leave</h3>
@@ -1987,7 +2004,7 @@ function renderLeaveBalances(){
   tb.innerHTML = rows.map(e=>`<tr>
     <td class="id-mono">${escapeHtml(e.id)}</td><td>${escapeHtml(e.name)}</td><td class="muted">${escapeHtml(e.department)||'—'}</td>
     ${cell(e,'Vacation')}${cell(e,'Sick')}${cell(e,'Birthday')}
-    <td><div class="actions"><button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button></div></td></tr>`).join('');
+    <td><div class="actions"><button class="iconbtn" onclick="openCreditsModal('${e.id}')">edit credits</button><button class="iconbtn" onclick="openLeaveModal(null,'${e.id}')">file leave</button></div></td></tr>`).join('');
 }
 function renderLeaveRequests(){
   const search = (document.getElementById('lr-search')?.value||'').toLowerCase();
@@ -2011,6 +2028,24 @@ function renderLeaveRequests(){
     <td><span class="pill ${lvPill(r.status)}">${escapeHtml(r.status)}</span></td>
     <td><div class="actions">${r.status==='Pending'?`<button class="iconbtn" onclick="quickLeave('${r.id}','Approved')">approve</button><button class="iconbtn" onclick="quickLeave('${r.id}','Rejected')">reject</button>`:''}
       <button class="iconbtn" onclick="openLeaveModal('${r.id}')">edit</button></div></td></tr>`).join('');
+}
+function openCreditsModal(empId){
+  const e = DB.leaveEmployees.find(x=>x.id===empId); if(!e) return;
+  document.getElementById('cr-emp').value = empId;
+  document.getElementById('cr-title').textContent = `Leave Credits — ${e.name}`;
+  ['Vacation','Sick','Birthday'].forEach(t=>document.getElementById('f-cr-'+t).value = e.credit[t]);
+  const used = t=>Math.round((e.credit[t]-lvBalance(empId,t))*100)/100;
+  document.getElementById('cr-hint').textContent = `Approved with-pay days already used — Vacation: ${used('Vacation')}, Sick: ${used('Sick')}, Birthday: ${used('Birthday')}. Balance = credit minus these.`;
+  document.getElementById('modal-credits').classList.add('open');
+}
+async function saveCredits(){
+  const id = document.getElementById('cr-emp').value;
+  const v = t=>Number(document.getElementById('f-cr-'+t).value);
+  const vals = [v('Vacation'), v('Sick'), v('Birthday')];
+  if(vals.some(n=>isNaN(n) || n<0)){ alert('Credits must be numbers of 0 or more.'); return; }
+  const { error } = await sb.from('leave_employees').update({ vacation_credit:vals[0], sick_credit:vals[1], birthday_credit:vals[2] }).eq('emp_id', id);
+  if(error){ alert('Save failed: '+error.message); return; }
+  closeModal('modal-credits'); await loadDB(); renderAll();
 }
 async function quickLeave(id, status){
   const today = new Date().toISOString().slice(0,10);
