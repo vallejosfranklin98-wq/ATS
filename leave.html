@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leave Management — North Breeders Corp</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f4f6fb;--surface:#fff;--alt:#eef1f8;--ink:#1c2536;--dim:#64748b;--line:#e2e8f0;--green:#16a34a;--red:#dc2626;--amber:#d97706;
+    --f-display:'Sora',-apple-system,sans-serif;--f-body:'Inter',-apple-system,sans-serif;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f172a;--surface:#1e293b;--alt:#273449;--ink:#e8edf6;--dim:#94a3b8;--line:#334155;}}
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--f-body);padding:32px 16px;display:flex;flex-direction:column;align-items:center;}
+  .wrap{width:100%;max-width:640px;}
+  .back{color:var(--dim);font-size:13px;text-decoration:none;}
+  .mark{margin-top:18px;font-size:11px;letter-spacing:.18em;color:var(--green);text-transform:uppercase;font-weight:600;}
+  h1{font-family:var(--f-display);font-size:24px;margin:6px 0 4px;}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 22px;line-height:1.5;}
+  .card{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--green);border-radius:14px;padding:22px;margin-bottom:16px;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--dim);margin:0 0 6px;}
+  input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;background:var(--bg);color:var(--ink);}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+  @media (max-width:520px){.row{grid-template-columns:1fr;}}
+  button{width:100%;padding:12px;border:0;border-radius:9px;background:var(--green);color:#fff;font:inherit;font-weight:600;cursor:pointer;}
+  button:disabled{opacity:.6;cursor:default;}
+  .err{display:none;margin-top:12px;color:var(--red);font-size:13px;}
+  .who{font-family:var(--f-display);font-size:18px;font-weight:700;}
+  .dept{color:var(--dim);font-size:13px;margin-bottom:16px;}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  @media (max-width:520px){.tiles{grid-template-columns:1fr;}}
+  .tile{background:var(--alt);border-radius:12px;padding:14px;}
+  .tile .t{font-size:12px;color:var(--dim);font-weight:600;}
+  .tile .n{font-family:var(--f-display);font-size:30px;font-weight:800;margin:4px 0 2px;color:var(--green);}
+  .tile .n.zero{color:var(--red);}
+  .tile .d{font-size:12px;color:var(--dim);}
+  h2{font-family:var(--f-display);font-size:15px;margin:22px 0 10px;}
+  .scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--dim);font-weight:600;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--line);}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  .pill{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;background:var(--alt);}
+  .pill.Approved{color:var(--green);} .pill.Pending{color:var(--amber);} .pill.Rejected,.pill.Cancelled{color:var(--dim);}
+  .note{font-size:12px;color:var(--dim);margin-top:14px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Back</a>
+  <div class="mark">North Breeders Corp</div>
+  <h1>Leave Management</h1>
+  <p class="sub">Check your remaining leave credits. Enter your Employee ID and your hire date to verify it's you.</p>
+
+  <div class="card">
+    <div class="row">
+      <div><label for="empId">Employee ID</label><input id="empId" inputmode="numeric" placeholder="e.g. 2160001" autocomplete="off"></div>
+      <div><label for="hire">Hire date</label><input id="hire" type="date"></div>
+    </div>
+    <button id="go" onclick="check()">Check my balance</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="card" id="result" style="display:none;">
+    <div class="who" id="r-name"></div>
+    <div class="dept" id="r-dept"></div>
+    <div class="tiles" id="r-tiles"></div>
+    <h2>My leave filings</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Type</th><th>From</th><th>To</th><th>With pay</th><th>W/o pay</th><th>Status</th></tr></thead>
+      <tbody id="r-rows"></tbody>
+    </table></div>
+    <div class="note">Remaining credits already account for filed leaves that are pending or approved. If something looks wrong, please contact HR.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = 'https://byakcfrvrxhooighfbym.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Z_svHVFuWhlIROkemo7glw_6IY-bxol';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const esc = s => (s ?? '').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const num = v => String(Math.round(Number(v) * 100) / 100);
+
+async function check(){
+  const id = document.getElementById('empId').value.trim();
+  const hire = document.getElementById('hire').value;
+  const err = document.getElementById('err'), btn = document.getElementById('go');
+  err.style.display = 'none';
+  document.getElementById('result').style.display = 'none';
+  if(!id || !hire){ err.textContent = 'Please enter your Employee ID and hire date.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    const { data, error } = await sb.rpc('get_leave_balance', { p_emp_id: id, p_hire_date: hire });
+    if(error) throw error;
+    if(data.status !== 'success'){ err.textContent = data.message; err.style.display = 'block'; return; }
+    document.getElementById('r-name').textContent = data.name;
+    document.getElementById('r-dept').textContent = data.department || '';
+    document.getElementById('r-tiles').innerHTML = data.balances.map(b => `
+      <div class="tile"><div class="t">${esc(b.type)}</div>
+      <div class="n ${Number(b.balance) <= 0 ? 'zero' : ''}">${num(b.balance)}</div>
+      <div class="d">day(s) left · ${num(b.used)} of ${num(b.credit)} used</div></div>`).join('');
+    document.getElementById('r-rows').innerHTML = data.requests.length ? data.requests.map(r => `
+      <tr><td>${esc(r.type)}</td><td>${esc(r.from || '—')}</td><td>${esc(r.to || '—')}</td>
+      <td>${num(r.with_pay)}</td><td>${num(r.without_pay)}</td><td><span class="pill ${esc(r.status)}">${esc(r.status)}</span></td></tr>`).join('')
+      : '<tr><td colspan="6" style="color:var(--dim);">No leave filings yet.</td></tr>';
+    document.getElementById('result').style.display = 'block';
+  } catch(e){
+    err.textContent = 'Something went wrong. Please try again or contact HR.'; err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Check my balance';
+  }
+}
+document.getElementById('empId').addEventListener('keydown', e => { if(e.key === 'Enter') check(); });
+</script>
+</body>
+</html>
