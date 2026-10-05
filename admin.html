@@ -567,7 +567,7 @@
     <!-- LEAVE -->
     <section class="view" id="view-leave-balances">
       <div class="pagehead">
-        <div><h1>Leave Balances</h1><p>Remaining credits per employee (credits minus approved with-pay days)</p></div>
+        <div><h1>Leave Balances</h1><p>Remaining credits per employee (credits minus pending and approved with-pay days)</p></div>
         <button class="btn" onclick="openLeaveModal()">+ File Leave</button>
       </div>
       <div class="toolbar">
@@ -1979,7 +1979,7 @@ function leaveTypes(){ return DB.settings.leave_type.length ? DB.settings.leave_
 function lvBalance(empId, type, excludeId){
   const e = DB.leaveEmployees.find(x=>x.id===empId);
   if(!e || !(type in e.credit)) return null;
-  const used = DB.leaveRequests.filter(r=>r.empId===empId && r.type===type && r.status==='Approved' && r.id!==excludeId)
+  const used = DB.leaveRequests.filter(r=>r.empId===empId && r.type===type && (r.status==='Approved'||r.status==='Pending') && r.id!==excludeId)
                                .reduce((s,r)=>s+r.withPay,0);
   return Math.round((e.credit[type]-used)*100)/100;
 }
@@ -2035,7 +2035,7 @@ function openCreditsModal(empId){
   document.getElementById('cr-title').textContent = `Leave Credits — ${e.name}`;
   ['Vacation','Sick','Birthday'].forEach(t=>document.getElementById('f-cr-'+t).value = e.credit[t]);
   const used = t=>Math.round((e.credit[t]-lvBalance(empId,t))*100)/100;
-  document.getElementById('cr-hint').textContent = `Approved with-pay days already used — Vacation: ${used('Vacation')}, Sick: ${used('Sick')}, Birthday: ${used('Birthday')}. Balance = credit minus these.`;
+  document.getElementById('cr-hint').textContent = `Pending and approved with-pay days already deducted — Vacation: ${used('Vacation')}, Sick: ${used('Sick')}, Birthday: ${used('Birthday')}. Balance = credit minus these.`;
   document.getElementById('modal-credits').classList.add('open');
 }
 async function saveCredits(){
